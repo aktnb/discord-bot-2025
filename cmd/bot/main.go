@@ -1,0 +1,62 @@
+package main
+
+import (
+	"context"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/aktnb/discord-bot-go/internal/application/voicetext"
+	"github.com/aktnb/discord-bot-go/internal/config"
+	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord"
+	"github.com/aktnb/discord-bot-go/internal/infrastructure/persistence"
+	"github.com/bwmarrin/discordgo"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+func main() {
+	ctx := context.Background()
+	cfg := config.Load()
+
+	// Initialize Discord session
+	session, err := discordgo.New("Bot " + cfg.DiscordToken)
+	if err != nil {
+		log.Fatalf("failed to create Discord session: %v", err)
+	}
+
+	// Add necessary intents
+	session.Identify.Intents = discordgo.IntentsGuilds |
+		discordgo.IntentsGuildMessages |
+		discordgo.IntentsGuildVoiceStates
+
+	if err := session.Open(); err != nil {
+		log.Fatalf("cannot open Discord session: %v", err)
+	}
+	defer session.Close()
+
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("failed to create database connection pool: %v", err)
+	}
+	defer pool.Close()
+	txm := persistence.NewTxManager(pool)
+
+	vtlRepositories := persistence.NewVoiceTextLinkRepositoryFactory()
+	discordAdapter := discord.NewDiscordAdapter(session)
+	vtlService := voicetext.NewVoiceTextService(vtlRepositories, txm, discordAdapter)
+
+	// Register handlers
+	voiceStateHandler := discord.NewVoiceStateUpdateHandler(vtlService)
+
+	session.AddHandler(voiceStateHandler.Handle())
+
+	log.Println("Bot is now running. Press CTRL+C to exit.")
+
+	// Wait for interrupt signal
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	<-stop
+
+	log.Println("Bot is shutting down...")
+}
