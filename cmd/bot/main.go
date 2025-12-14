@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/aktnb/discord-bot-go/internal/application/cat"
+	"github.com/aktnb/discord-bot-go/internal/application/mahjong"
 	"github.com/aktnb/discord-bot-go/internal/application/ping"
 	"github.com/aktnb/discord-bot-go/internal/application/voicetext"
 	"github.com/aktnb/discord-bot-go/internal/config"
@@ -15,7 +16,9 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands"
 	catcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/cat"
+	mahjongcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/mahjong"
 	pingcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/ping"
+	"github.com/aktnb/discord-bot-go/internal/infrastructure/mahjongapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/persistence"
 	"github.com/bwmarrin/discordgo"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -64,6 +67,14 @@ func main() {
 	catHandler := catcmd.NewCatCommandHandler(catService)
 
 	registry.Register(catDef, catHandler)
+
+	// Mahjong command
+	mahjongAPIClient := mahjongapi.NewMahjongAPIClient()
+	mahjongService := mahjong.NewMahjongService(mahjongAPIClient)
+	mahjongDef := mahjongcmd.NewMahjongCommandDefinition()
+	mahjongHandler := mahjongcmd.NewMahjongCommandHandler(mahjongService)
+
+	registry.Register(mahjongDef, mahjongHandler)
 
 	// Register handlers before opening session
 	commandRegistrar := commands.NewRegistrar(session, registry)
