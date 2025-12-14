@@ -44,7 +44,7 @@ func main() {
 	// Register handlers before opening session
 	commandRegistrar := discord.NewCommandRegistrar(session)
 	readyHandler := discord.NewReadyHandler(vtlService, commandRegistrar)
-	interactionHandler := discord.NewInteractionCreateHandler(vtlService)
+	interactionHandler := discord.NewInteractionCreateHandler()
 	voiceStateHandler := discord.NewVoiceStateUpdateHandler(vtlService)
 
 	session.AddHandlerOnce(readyHandler.Handle())
