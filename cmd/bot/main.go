@@ -42,10 +42,13 @@ func main() {
 	vtlService := voicetext.NewVoiceTextService(vtlRepositories, txm, discordAdapter)
 
 	// Register handlers before opening session
-	readyHandler := discord.NewReadyHandler(vtlService)
+	commandRegistrar := discord.NewCommandRegistrar(session)
+	readyHandler := discord.NewReadyHandler(vtlService, commandRegistrar)
+	interactionHandler := discord.NewInteractionCreateHandler(vtlService)
 	voiceStateHandler := discord.NewVoiceStateUpdateHandler(vtlService)
 
 	session.AddHandlerOnce(readyHandler.Handle())
+	session.AddHandler(interactionHandler.Handle())
 	session.AddHandler(voiceStateHandler.Handle())
 
 	if err := session.Open(); err != nil {

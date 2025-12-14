@@ -10,21 +10,50 @@ import (
 )
 
 type ReadyHandler struct {
-	service *voicetext.Service
+	service    *voicetext.Service
+	registrar  *CommandRegistrar
 }
 
-func NewReadyHandler(service *voicetext.Service) *ReadyHandler {
-	return &ReadyHandler{service: service}
+func NewReadyHandler(service *voicetext.Service, registrar *CommandRegistrar) *ReadyHandler {
+	return &ReadyHandler{
+		service:   service,
+		registrar: registrar,
+	}
 }
 
 func (h *ReadyHandler) Handle() func(*discordgo.Session, *discordgo.Ready) {
 	return func(s *discordgo.Session, r *discordgo.Ready) {
-		log.Println("Bot is ready. Starting voice-text link synchronization...")
+		log.Println("Bot is ready.")
+
+		// Register application commands
+		if err := h.registrar.RegisterApplicationCommands(); err != nil {
+			log.Printf("Warning: command registration failed: %v", err)
+			// コマンド登録失敗は警告のみで続行
+		}
+
+		// Sync voice-text links
+		log.Println("Starting voice-text link synchronization...")
 		if err := h.service.SyncVoiceTextLinks(context.Background()); err != nil {
 			log.Printf("Warning: sync failed: %v", err)
 			// 同期失敗は警告のみで続行（既存機能は動作）
 		}
 		log.Println("Voice-text link synchronization completed.")
+	}
+}
+
+type InteractionCreateHandler struct {
+	service *voicetext.Service
+}
+
+func NewInteractionCreateHandler(service *voicetext.Service) *InteractionCreateHandler {
+	return &InteractionCreateHandler{service: service}
+}
+
+func (h *InteractionCreateHandler) Handle() func(*discordgo.Session, *discordgo.InteractionCreate) {
+	return func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		// Currently no commands are implemented
+		// When commands are added, handle them here based on i.ApplicationCommandData().Name
+		log.Printf("Received interaction: %s", i.ApplicationCommandData().Name)
 	}
 }
 
