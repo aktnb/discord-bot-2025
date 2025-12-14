@@ -9,6 +9,25 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+type ReadyHandler struct {
+	service *voicetext.Service
+}
+
+func NewReadyHandler(service *voicetext.Service) *ReadyHandler {
+	return &ReadyHandler{service: service}
+}
+
+func (h *ReadyHandler) Handle() func(*discordgo.Session, *discordgo.Ready) {
+	return func(s *discordgo.Session, r *discordgo.Ready) {
+		log.Println("Bot is ready. Starting voice-text link synchronization...")
+		if err := h.service.SyncVoiceTextLinks(context.Background()); err != nil {
+			log.Printf("Warning: sync failed: %v", err)
+			// 同期失敗は警告のみで続行（既存機能は動作）
+		}
+		log.Println("Voice-text link synchronization completed.")
+	}
+}
+
 type VoiceStateUpdateHandler struct {
 	service *voicetext.Service
 }

@@ -30,11 +30,6 @@ func main() {
 		discordgo.IntentsGuildMessages |
 		discordgo.IntentsGuildVoiceStates
 
-	if err := session.Open(); err != nil {
-		log.Fatalf("cannot open Discord session: %v", err)
-	}
-	defer session.Close()
-
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("failed to create database connection pool: %v", err)
@@ -46,10 +41,17 @@ func main() {
 	discordAdapter := discord.NewDiscordAdapter(session)
 	vtlService := voicetext.NewVoiceTextService(vtlRepositories, txm, discordAdapter)
 
-	// Register handlers
+	// Register handlers before opening session
+	readyHandler := discord.NewReadyHandler(vtlService)
 	voiceStateHandler := discord.NewVoiceStateUpdateHandler(vtlService)
 
+	session.AddHandlerOnce(readyHandler.Handle())
 	session.AddHandler(voiceStateHandler.Handle())
+
+	if err := session.Open(); err != nil {
+		log.Fatalf("cannot open Discord session: %v", err)
+	}
+	defer session.Close()
 
 	log.Println("Bot is now running. Press CTRL+C to exit.")
 

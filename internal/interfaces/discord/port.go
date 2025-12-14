@@ -17,4 +17,8 @@ type DiscordPort interface {
 	RemoveMemberFromTextChannel(ctx context.Context, guildID discordid.GuildID, textChannelID discordid.TextChannelID, userID discordid.UserID) error
 
 	GetVoiceChannelMemberCount(ctx context.Context, guildID discordid.GuildID, voiceChannelID discordid.VoiceChannelID) (int, error)
+
+	GetGuilds(ctx context.Context) ([]discordid.GuildID, error)
+	GetGuildVoiceStates(ctx context.Context, guildID discordid.GuildID) (map[discordid.VoiceChannelID][]discordid.UserID, error)
+	GetTextChannelMembers(ctx context.Context, textChannelID discordid.TextChannelID) ([]discordid.UserID, error)
 }

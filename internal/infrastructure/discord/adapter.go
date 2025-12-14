@@ -123,3 +123,45 @@ func (a *DiscordAdapter) GetVoiceChannelMemberCount(ctx context.Context, guildID
 
 	return count, nil
 }
+
+func (a *DiscordAdapter) GetGuilds(ctx context.Context) ([]discordid.GuildID, error) {
+	guilds := make([]discordid.GuildID, 0, len(a.session.State.Guilds))
+	for _, guild := range a.session.State.Guilds {
+		guilds = append(guilds, discordid.GuildID(guild.ID))
+	}
+	return guilds, nil
+}
+
+func (a *DiscordAdapter) GetGuildVoiceStates(ctx context.Context, guildID discordid.GuildID) (map[discordid.VoiceChannelID][]discordid.UserID, error) {
+	guild, err := a.session.State.Guild(string(guildID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get guild: %w", err)
+	}
+
+	channelUsers := make(map[discordid.VoiceChannelID][]discordid.UserID)
+	for _, vs := range guild.VoiceStates {
+		if vs.ChannelID != "" {
+			channelID := discordid.VoiceChannelID(vs.ChannelID)
+			userID := discordid.UserID(vs.UserID)
+			channelUsers[channelID] = append(channelUsers[channelID], userID)
+		}
+	}
+
+	return channelUsers, nil
+}
+
+func (a *DiscordAdapter) GetTextChannelMembers(ctx context.Context, textChannelID discordid.TextChannelID) ([]discordid.UserID, error) {
+	channel, err := a.session.Channel(string(textChannelID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get text channel: %w", err)
+	}
+
+	var userIDs []discordid.UserID
+	for _, overwrite := range channel.PermissionOverwrites {
+		if overwrite.Type == discordgo.PermissionOverwriteTypeMember {
+			userIDs = append(userIDs, discordid.UserID(overwrite.ID))
+		}
+	}
+
+	return userIDs, nil
+}

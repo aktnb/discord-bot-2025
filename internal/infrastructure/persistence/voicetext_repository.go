@@ -150,3 +150,49 @@ func (r *VoiceTextLinkRepository) Delete(ctx context.Context, id voicetext.Voice
 
 	return nil
 }
+
+func (r *VoiceTextLinkRepository) FindAll(ctx context.Context) ([]*voicetext.VoiceTextLink, error) {
+	query := `
+		SELECT id, guild_id, voice_channel_id, text_channel_id, created_at, updated_at
+		FROM voice_text_links
+		ORDER BY created_at
+	`
+
+	rows, err := r.tx.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var links []*voicetext.VoiceTextLink
+	for rows.Next() {
+		var (
+			dbID             string
+			dbGuildID        string
+			dbVoiceChannelID string
+			dbTextChannelID  string
+			dbCreatedAt      time.Time
+			dbUpdatedAt      time.Time
+		)
+
+		if err := rows.Scan(&dbID, &dbGuildID, &dbVoiceChannelID, &dbTextChannelID, &dbCreatedAt, &dbUpdatedAt); err != nil {
+			return nil, err
+		}
+
+		link, err := voicetext.RebuildVoiceTextLink(
+			voicetext.VoiceTextID(dbID),
+			discordid.GuildID(dbGuildID),
+			discordid.VoiceChannelID(dbVoiceChannelID),
+			discordid.TextChannelID(dbTextChannelID),
+			dbCreatedAt,
+			dbUpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		links = append(links, link)
+	}
+
+	return links, rows.Err()
+}

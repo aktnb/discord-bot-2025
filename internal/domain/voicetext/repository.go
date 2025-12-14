@@ -10,6 +10,7 @@ import (
 type Repository interface {
 	FindByVoiceChannel(ctx context.Context, guildId discordid.GuildID, voiceChannelID discordid.VoiceChannelID) (*VoiceTextLink, error)
 	FindByTextChannel(ctx context.Context, guildID discordid.GuildID, textChannelID discordid.TextChannelID) (*VoiceTextLink, error)
+	FindAll(ctx context.Context) ([]*VoiceTextLink, error)
 	Save(ctx context.Context, vtl *VoiceTextLink) error
 	Delete(ctx context.Context, id VoiceTextID) error
 }
