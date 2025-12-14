@@ -9,6 +9,7 @@ import (
 
 	"github.com/aktnb/discord-bot-go/internal/application/cat"
 	"github.com/aktnb/discord-bot-go/internal/application/mahjong"
+	"github.com/aktnb/discord-bot-go/internal/application/omikuji"
 	"github.com/aktnb/discord-bot-go/internal/application/ping"
 	"github.com/aktnb/discord-bot-go/internal/application/voicetext"
 	"github.com/aktnb/discord-bot-go/internal/config"
@@ -17,6 +18,7 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands"
 	catcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/cat"
 	mahjongcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/mahjong"
+	omikujicmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/omikuji"
 	pingcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/ping"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/mahjongapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/persistence"
@@ -75,6 +77,13 @@ func main() {
 	mahjongHandler := mahjongcmd.NewMahjongCommandHandler(mahjongService)
 
 	registry.Register(mahjongDef, mahjongHandler)
+
+	// Omikuji command
+	omikujiService := omikuji.NewOmikujiService()
+	omikujiDef := omikujicmd.NewOmikujiCommandDefinition()
+	omikujiHandler := omikujicmd.NewOmikujiCommandHandler(omikujiService)
+
+	registry.Register(omikujiDef, omikujiHandler)
 
 	// Register handlers before opening session
 	commandRegistrar := commands.NewRegistrar(session, registry)
