@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/aktnb/discord-bot-go/internal/application/cat"
+	"github.com/aktnb/discord-bot-go/internal/application/dog"
 	"github.com/aktnb/discord-bot-go/internal/application/mahjong"
 	"github.com/aktnb/discord-bot-go/internal/application/omikuji"
 	"github.com/aktnb/discord-bot-go/internal/application/ping"
@@ -17,9 +18,11 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands"
 	catcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/cat"
+	dogcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/dog"
 	mahjongcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/mahjong"
 	omikujicmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/omikuji"
 	pingcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/ping"
+	"github.com/aktnb/discord-bot-go/internal/infrastructure/dogapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/mahjongapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/persistence"
 	"github.com/bwmarrin/discordgo"
@@ -69,6 +72,14 @@ func main() {
 	catHandler := catcmd.NewCatCommandHandler(catService)
 
 	registry.Register(catDef, catHandler)
+
+	// Dog command
+	dogAPIClient := dogapi.NewDogAPIClient()
+	dogService := dog.NewDogService(dogAPIClient)
+	dogDef := dogcmd.NewDogCommandDefinition()
+	dogHandler := dogcmd.NewDogCommandHandler(dogService)
+
+	registry.Register(dogDef, dogHandler)
 
 	// Mahjong command
 	mahjongAPIClient := mahjongapi.NewMahjongAPIClient()
