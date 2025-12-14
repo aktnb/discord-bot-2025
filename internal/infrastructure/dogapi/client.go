@@ -46,7 +46,7 @@ func (c *DogAPIClient) FetchRandomImage(ctx context.Context) (*dog.DogImage, err
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, dog.ErrAPIUnavailable
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	var apiResp apiResponse
