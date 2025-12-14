@@ -27,6 +27,7 @@ jobs:
         id: determine_tag
         run: |
           INPUT_TAG="${{ github.event.inputs.tag }}"
+          IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
 
           if [ -n "$INPUT_TAG" ]; then
             echo "tag=$INPUT_TAG" >> $GITHUB_OUTPUT
@@ -35,16 +36,45 @@ jobs:
             LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
 
             if [ -z "$LATEST_TAG" ]; then
-              # リリースが存在しない場合は v0.0.1 から始める
-              NEW_TAG="v0.0.1"
+              # リリースが存在しない場合
+              if [ "$IS_PRERELEASE" = "true" ]; then
+                NEW_TAG="v0.0.1-rc1"
+              else
+                NEW_TAG="v0.0.1"
+              fi
             else
-              # v1.2.3 形式からバージョン番号を抽出してパッチバージョンをインクリメント
-              VERSION=${LATEST_TAG#v}
-              MAJOR=$(echo $VERSION | cut -d. -f1)
-              MINOR=$(echo $VERSION | cut -d. -f2)
-              PATCH=$(echo $VERSION | cut -d. -f3)
-              PATCH=$((PATCH + 1))
-              NEW_TAG="v$MAJOR.$MINOR.$PATCH"
+              if [ "$IS_PRERELEASE" = "true" ]; then
+                # Pre-releaseの場合
+                if [[ "$LATEST_TAG" =~ -rc([0-9]+)$ ]]; then
+                  # 既に -rc タグが存在する場合、番号をインクリメント
+                  RC_NUM="${BASH_REMATCH[1]}"
+                  BASE_TAG="${LATEST_TAG%-rc*}"
+                  RC_NUM=$((RC_NUM + 1))
+                  NEW_TAG="${BASE_TAG}-rc${RC_NUM}"
+                else
+                  # -rc タグが存在しない場合、バージョンをインクリメントして -rc1 を追加
+                  VERSION=${LATEST_TAG#v}
+                  MAJOR=$(echo $VERSION | cut -d. -f1)
+                  MINOR=$(echo $VERSION | cut -d. -f2)
+                  PATCH=$(echo $VERSION | cut -d. -f3)
+                  PATCH=$((PATCH + 1))
+                  NEW_TAG="v$MAJOR.$MINOR.$PATCH-rc1"
+                fi
+              else
+                # 通常リリースの場合
+                if [[ "$LATEST_TAG" =~ -rc[0-9]+$ ]]; then
+                  # 最新タグが -rc の場合、-rc を取り除く
+                  NEW_TAG="${LATEST_TAG%-rc*}"
+                else
+                  # 通常のタグの場合、パッチバージョンをインクリメント
+                  VERSION=${LATEST_TAG#v}
+                  MAJOR=$(echo $VERSION | cut -d. -f1)
+                  MINOR=$(echo $VERSION | cut -d. -f2)
+                  PATCH=$(echo $VERSION | cut -d. -f3)
+                  PATCH=$((PATCH + 1))
+                  NEW_TAG="v$MAJOR.$MINOR.$PATCH"
+                fi
+              fi
             fi
 
             echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
@@ -70,11 +100,23 @@ jobs:
           sha256sum discord-bot-linux-arm64 > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
+      - name: Set release name
+        id: release_name
+        run: |
+          TAG="${{ steps.determine_tag.outputs.tag }}"
+          IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
+
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            echo "name=Prerelease $TAG" >> $GITHUB_OUTPUT
+          else
+            echo "name=Release $TAG" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.determine_tag.outputs.tag }}
-          name: Release ${{ steps.determine_tag.outputs.tag }}
+          name: ${{ steps.release_name.outputs.name }}
           prerelease: ${{ github.event.inputs.prerelease }}
           files: |
             discord-bot-linux-arm64
