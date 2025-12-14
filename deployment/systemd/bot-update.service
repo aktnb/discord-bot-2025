@@ -1,0 +1,20 @@
+[Unit]
+Description=Discord Bot Auto-Update Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+
+# bot-update スクリプトを実行
+ExecStart=/usr/local/bin/bot-update
+
+# ログ設定
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bot-update
+
+[Install]
+WantedBy=multi-user.target

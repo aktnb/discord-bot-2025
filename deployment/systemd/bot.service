@@ -1,0 +1,34 @@
+[Unit]
+Description=Discord Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=bot_user
+Group=bot_user
+WorkingDirectory=/opt/bot-user
+
+# 環境変数ファイルを読み込む
+EnvironmentFile=/opt/bot-user/shared/bot.env
+
+# currentシンボリックリンクを通じてバイナリを実行
+ExecStart=/opt/bot-user/current
+
+# 再起動ポリシー
+Restart=always
+RestartSec=10
+
+# セキュリティ設定
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/bot-user
+
+# ログ設定
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=discord-bot
+
+[Install]
+WantedBy=multi-user.target

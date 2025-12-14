@@ -1,0 +1,19 @@
+[Unit]
+Description=Discord Bot Auto-Update Timer
+Requires=bot-update.service
+
+[Timer]
+# システム起動1分後に最初の実行
+OnBootSec=1min
+
+# その後2分ごとに実行
+OnUnitActiveSec=2min
+
+# タイマーの精度（デフォルトは1分）
+AccuracySec=1s
+
+# タイマーが起動しなかった場合でも次回実行時に実行
+Persistent=true
+
+[Install]
+WantedBy=timers.target

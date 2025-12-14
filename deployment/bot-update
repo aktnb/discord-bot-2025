@@ -1,0 +1,249 @@
+#!/bin/bash
+set -euo pipefail
+
+# 設定
+GITHUB_REPO="aktnb/discord-bot-2025"
+INSTALL_DIR="/opt/bot-user"
+SHARED_DIR="${INSTALL_DIR}/shared"
+RELEASES_DIR="${INSTALL_DIR}/releases"
+ENV_FILE="${SHARED_DIR}/bot.env"
+LAST_TAG_FILE="${SHARED_DIR}/last_tag"
+CURRENT_LINK="${INSTALL_DIR}/current"
+PREVIOUS_LINK="${INSTALL_DIR}/previous"
+SERVICE_NAME="bot.service"
+
+# ログ関数
+log() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
+}
+
+error() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: $*" >&2
+}
+
+# 必要なディレクトリを作成
+ensure_directories() {
+    mkdir -p "${SHARED_DIR}" "${RELEASES_DIR}"
+}
+
+# 最新のリリースタグを取得
+get_latest_release_tag() {
+    local api_url="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
+    local tag
+
+    tag=$(curl -s "${api_url}" | grep -Po '"tag_name": "\K.*?(?=")' || true)
+
+    if [ -z "${tag}" ]; then
+        error "Failed to fetch latest release tag"
+        return 1
+    fi
+
+    echo "${tag}"
+}
+
+# 現在のタグを取得
+get_current_tag() {
+    if [ -f "${LAST_TAG_FILE}" ]; then
+        cat "${LAST_TAG_FILE}"
+    else
+        echo ""
+    fi
+}
+
+# リリースをダウンロード
+download_release() {
+    local tag="$1"
+    local release_dir="${RELEASES_DIR}/${tag}"
+    local tarball_url="https://github.com/${GITHUB_REPO}/releases/download/${tag}/discord-bot-linux-arm64.tar.gz"
+    local checksum_url="https://github.com/${GITHUB_REPO}/releases/download/${tag}/SHA256SUMS.txt"
+
+    log "Downloading release ${tag}..."
+
+    # リリースディレクトリを作成
+    mkdir -p "${release_dir}"
+
+    # tar.gz をダウンロード
+    if ! curl -L -f -o "${release_dir}/discord-bot-linux-arm64.tar.gz" "${tarball_url}"; then
+        error "Failed to download tarball"
+        rm -rf "${release_dir}"
+        return 1
+    fi
+
+    # チェックサムファイルをダウンロード
+    if ! curl -L -f -o "${release_dir}/SHA256SUMS.txt" "${checksum_url}"; then
+        error "Failed to download checksum file"
+        rm -rf "${release_dir}"
+        return 1
+    fi
+
+    log "Download completed"
+}
+
+# チェックサムを検証
+verify_checksum() {
+    local tag="$1"
+    local release_dir="${RELEASES_DIR}/${tag}"
+
+    log "Verifying checksum..."
+
+    cd "${release_dir}"
+
+    # チェックサムを検証
+    if ! sha256sum -c SHA256SUMS.txt; then
+        error "Checksum verification failed"
+        cd - > /dev/null
+        return 1
+    fi
+
+    cd - > /dev/null
+    log "Checksum verified successfully"
+}
+
+# tar.gz を展開
+extract_release() {
+    local tag="$1"
+    local release_dir="${RELEASES_DIR}/${tag}"
+
+    log "Extracting release..."
+
+    cd "${release_dir}"
+
+    if ! tar -xzf discord-bot-linux-arm64.tar.gz; then
+        error "Failed to extract tarball"
+        cd - > /dev/null
+        return 1
+    fi
+
+    # 実行権限を付与
+    chmod +x discord-bot-linux-arm64
+
+    cd - > /dev/null
+    log "Extraction completed"
+}
+
+# シンボリックリンクをswap
+swap_links() {
+    local tag="$1"
+    local new_binary="${RELEASES_DIR}/${tag}/discord-bot-linux-arm64"
+
+    log "Swapping symbolic links..."
+
+    # 現在のリンクを previous にバックアップ
+    if [ -L "${CURRENT_LINK}" ]; then
+        rm -f "${PREVIOUS_LINK}"
+        mv "${CURRENT_LINK}" "${PREVIOUS_LINK}"
+    fi
+
+    # 新しいバイナリへのリンクを作成
+    ln -sf "${new_binary}" "${CURRENT_LINK}"
+
+    log "Symbolic links updated"
+}
+
+# サービスを再起動
+restart_service() {
+    log "Restarting ${SERVICE_NAME}..."
+
+    if systemctl is-active --quiet "${SERVICE_NAME}"; then
+        if ! systemctl restart "${SERVICE_NAME}"; then
+            error "Failed to restart service"
+
+            # ロールバックを試みる
+            if [ -L "${PREVIOUS_LINK}" ]; then
+                log "Attempting rollback..."
+                rm -f "${CURRENT_LINK}"
+                mv "${PREVIOUS_LINK}" "${CURRENT_LINK}"
+                systemctl restart "${SERVICE_NAME}" || true
+            fi
+
+            return 1
+        fi
+    else
+        log "Service is not running, starting it..."
+        if ! systemctl start "${SERVICE_NAME}"; then
+            error "Failed to start service"
+            return 1
+        fi
+    fi
+
+    log "Service restarted successfully"
+}
+
+# last_tag を更新
+update_last_tag() {
+    local tag="$1"
+    echo "${tag}" > "${LAST_TAG_FILE}"
+    log "Updated last_tag to ${tag}"
+}
+
+# メイン処理
+main() {
+    log "Starting bot update check..."
+
+    # ディレクトリを作成
+    ensure_directories
+
+    # 最新のリリースタグを取得
+    local latest_tag
+    if ! latest_tag=$(get_latest_release_tag); then
+        error "Failed to get latest release tag"
+        exit 1
+    fi
+
+    log "Latest release tag: ${latest_tag}"
+
+    # 現在のタグを取得
+    local current_tag
+    current_tag=$(get_current_tag)
+
+    if [ -n "${current_tag}" ]; then
+        log "Current tag: ${current_tag}"
+    else
+        log "No current tag found (first deployment)"
+    fi
+
+    # タグが同じ場合は何もしない
+    if [ "${latest_tag}" = "${current_tag}" ]; then
+        log "Already up to date"
+        exit 0
+    fi
+
+    log "New release detected: ${current_tag} -> ${latest_tag}"
+
+    # リリースをダウンロード
+    if ! download_release "${latest_tag}"; then
+        error "Failed to download release"
+        exit 1
+    fi
+
+    # チェックサムを検証
+    if ! verify_checksum "${latest_tag}"; then
+        error "Failed to verify checksum"
+        exit 1
+    fi
+
+    # tar.gz を展開
+    if ! extract_release "${latest_tag}"; then
+        error "Failed to extract release"
+        exit 1
+    fi
+
+    # シンボリックリンクをswap
+    if ! swap_links "${latest_tag}"; then
+        error "Failed to swap links"
+        exit 1
+    fi
+
+    # サービスを再起動
+    if ! restart_service; then
+        error "Failed to restart service"
+        exit 1
+    fi
+
+    # last_tag を更新
+    update_last_tag "${latest_tag}"
+
+    log "Bot update completed successfully"
+}
+
+main "$@"
