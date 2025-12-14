@@ -7,11 +7,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/aktnb/discord-bot-go/internal/application/cat"
 	"github.com/aktnb/discord-bot-go/internal/application/ping"
 	"github.com/aktnb/discord-bot-go/internal/application/voicetext"
 	"github.com/aktnb/discord-bot-go/internal/config"
+	"github.com/aktnb/discord-bot-go/internal/infrastructure/catapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands"
+	catcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/cat"
 	pingcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/ping"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/persistence"
 	"github.com/bwmarrin/discordgo"
@@ -53,6 +56,14 @@ func main() {
 	pingHandler := pingcmd.NewPingCommandHandler(pingService)
 
 	registry.Register(pingDef, pingHandler)
+
+	// Cat command
+	catAPIClient := catapi.NewCatAPIClient()
+	catService := cat.NewCatService(catAPIClient)
+	catDef := catcmd.NewCatCommandDefinition()
+	catHandler := catcmd.NewCatCommandHandler(catService)
+
+	registry.Register(catDef, catHandler)
 
 	// Register handlers before opening session
 	commandRegistrar := commands.NewRegistrar(session, registry)
