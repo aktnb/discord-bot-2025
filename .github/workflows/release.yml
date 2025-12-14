@@ -1,0 +1,82 @@
+name: Build and Release (ARM64)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.0.0). Leave empty to auto-increment from latest release.'
+        required: false
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine release tag
+        id: determine_tag
+        run: |
+          INPUT_TAG="${{ github.event.inputs.tag }}"
+
+          if [ -n "$INPUT_TAG" ]; then
+            echo "tag=$INPUT_TAG" >> $GITHUB_OUTPUT
+          else
+            # 最新のリリースタグを取得
+            LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+
+            if [ -z "$LATEST_TAG" ]; then
+              # リリースが存在しない場合は v0.0.1 から始める
+              NEW_TAG="v0.0.1"
+            else
+              # v1.2.3 形式からバージョン番号を抽出してパッチバージョンをインクリメント
+              VERSION=${LATEST_TAG#v}
+              MAJOR=$(echo $VERSION | cut -d. -f1)
+              MINOR=$(echo $VERSION | cut -d. -f2)
+              PATCH=$(echo $VERSION | cut -d. -f3)
+              PATCH=$((PATCH + 1))
+              NEW_TAG="v$MAJOR.$MINOR.$PATCH"
+            fi
+
+            echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Using tag: $(cat $GITHUB_OUTPUT | grep tag | cut -d= -f2)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Build for ARM64 (Linux)
+        run: |
+          GOOS=linux GOARCH=arm64 go build -o discord-bot-linux-arm64 ./cmd/bot
+        env:
+          CGO_ENABLED: 0
+
+      - name: Generate SHA256 checksum
+        run: |
+          sha256sum discord-bot-linux-arm64 > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.determine_tag.outputs.tag }}
+          name: Release ${{ steps.determine_tag.outputs.tag }}
+          prerelease: ${{ github.event.inputs.prerelease }}
+          files: |
+            discord-bot-linux-arm64
+            SHA256SUMS.txt
+          generate_release_notes: true
