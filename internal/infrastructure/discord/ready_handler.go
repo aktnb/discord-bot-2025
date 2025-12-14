@@ -5,15 +5,16 @@ import (
 	"log"
 
 	"github.com/aktnb/discord-bot-go/internal/application/voicetext"
+	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands"
 	"github.com/bwmarrin/discordgo"
 )
 
 type ReadyHandler struct {
-	service    *voicetext.Service
-	registrar  *CommandRegistrar
+	service   *voicetext.Service
+	registrar *commands.CommandRegistrar
 }
 
-func NewReadyHandler(service *voicetext.Service, registrar *CommandRegistrar) *ReadyHandler {
+func NewReadyHandler(service *voicetext.Service, registrar *commands.CommandRegistrar) *ReadyHandler {
 	return &ReadyHandler{
 		service:   service,
 		registrar: registrar,

@@ -7,9 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/aktnb/discord-bot-go/internal/application/ping"
 	"github.com/aktnb/discord-bot-go/internal/application/voicetext"
 	"github.com/aktnb/discord-bot-go/internal/config"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord"
+	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands"
+	pingcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/ping"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/persistence"
 	"github.com/bwmarrin/discordgo"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -41,10 +44,20 @@ func main() {
 	discordAdapter := discord.NewDiscordAdapter(session)
 	vtlService := voicetext.NewVoiceTextService(vtlRepositories, txm, discordAdapter)
 
+	// Command registry
+	registry := commands.NewCommandRegistry()
+
+	// Ping command
+	pingService := ping.NewPingService()
+	pingDef := pingcmd.NewPingCommandDefinition()
+	pingHandler := pingcmd.NewPingCommandHandler(pingService)
+
+	registry.Register(pingDef, pingHandler)
+
 	// Register handlers before opening session
-	commandRegistrar := discord.NewCommandRegistrar(session)
+	commandRegistrar := commands.NewRegistrar(session, registry)
 	readyHandler := discord.NewReadyHandler(vtlService, commandRegistrar)
-	interactionHandler := discord.NewInteractionCreateHandler()
+	interactionHandler := discord.NewInteractionCreateHandler(registry)
 	voiceStateHandler := discord.NewVoiceStateUpdateHandler(vtlService)
 
 	session.AddHandlerOnce(readyHandler.Handle())

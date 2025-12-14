@@ -1,22 +1,44 @@
 package discord
 
 import (
+	"context"
 	"log"
 
+	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands"
 	"github.com/bwmarrin/discordgo"
 )
 
 type InteractionCreateHandler struct {
+	registry *commands.CommandRegistry
 }
 
-func NewInteractionCreateHandler() *InteractionCreateHandler {
-	return &InteractionCreateHandler{}
+func NewInteractionCreateHandler(registry *commands.CommandRegistry) *InteractionCreateHandler {
+	return &InteractionCreateHandler{
+		registry: registry,
+	}
 }
 
 func (h *InteractionCreateHandler) Handle() func(*discordgo.Session, *discordgo.InteractionCreate) {
 	return func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		// Currently no commands are implemented
-		// When commands are added, handle them here based on i.ApplicationCommandData().Name
-		log.Printf("Received interaction: %s", i.ApplicationCommandData().Name)
+		switch i.Type {
+		case discordgo.InteractionApplicationCommand:
+			h.routeApplicationCommand(s, i)
+		default:
+			log.Printf("Unsupported interaction type: %v", i.Type)
+		}
+	}
+}
+
+func (h *InteractionCreateHandler) routeApplicationCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	commandName := i.ApplicationCommandData().Name
+
+	handler, ok := h.registry.GetHandler(commandName)
+	if !ok {
+		log.Printf("Unknown command: %s", commandName)
+		return
+	}
+
+	if err := handler.Handle(context.Background(), s, i); err != nil {
+		log.Printf("Error handling command %s: %v", commandName, err)
 	}
 }
