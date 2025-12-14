@@ -95,9 +95,14 @@ jobs:
         env:
           CGO_ENABLED: 0
 
+      - name: Create tar.gz archive
+        run: |
+          tar -czf discord-bot-linux-arm64.tar.gz discord-bot-linux-arm64
+          ls -lh discord-bot-linux-arm64.tar.gz
+
       - name: Generate SHA256 checksum
         run: |
-          sha256sum discord-bot-linux-arm64 > SHA256SUMS.txt
+          sha256sum discord-bot-linux-arm64.tar.gz > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Set release name
@@ -119,6 +124,6 @@ jobs:
           name: ${{ steps.release_name.outputs.name }}
           prerelease: ${{ github.event.inputs.prerelease }}
           files: |
-            discord-bot-linux-arm64
+            discord-bot-linux-arm64.tar.gz
             SHA256SUMS.txt
           generate_release_notes: true
