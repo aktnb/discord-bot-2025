@@ -29,6 +29,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// version はボットのバージョン情報を保持します。
+// ビルド時に ldflags で上書き可能です: go build -ldflags "-X main.version=v1.0.0"
+// デフォルトは "develop" です。
+var version = "develop"
+
 func main() {
 	ctx := context.Background()
 	cfg := config.Load()
@@ -108,6 +113,9 @@ func main() {
 
 	if err := session.Open(); err != nil {
 		log.Fatalf("cannot open Discord session: %v", err)
+	}
+	if err := session.UpdateCustomStatus(version); err != nil {
+		log.Printf("failed to update bot status: %v", err)
 	}
 	defer session.Close()
 
