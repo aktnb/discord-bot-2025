@@ -9,34 +9,28 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type MahjongCommandDefinition struct{}
-
-func NewMahjongCommandDefinition() *MahjongCommandDefinition {
-	return &MahjongCommandDefinition{}
-}
-
-func (m *MahjongCommandDefinition) Name() string {
-	return "mahjong"
-}
-
-func (m *MahjongCommandDefinition) ToDiscordCommand() *discordgo.ApplicationCommand {
-	return &discordgo.ApplicationCommand{
-		Name:        m.Name(),
-		Description: "ランダムな麻雀の配牌を表示します",
-	}
-}
-
-type MahjongCommandHandler struct {
+type MahjongCommand struct {
 	service *appmahjong.Service
 }
 
-func NewMahjongCommandHandler(service *appmahjong.Service) *MahjongCommandHandler {
-	return &MahjongCommandHandler{
+func NewMahjongCommand(service *appmahjong.Service) *MahjongCommand {
+	return &MahjongCommand{
 		service: service,
 	}
 }
 
-func (h *MahjongCommandHandler) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (c *MahjongCommand) Name() string {
+	return "mahjong"
+}
+
+func (c *MahjongCommand) ToDiscordCommand() *discordgo.ApplicationCommand {
+	return &discordgo.ApplicationCommand{
+		Name:        c.Name(),
+		Description: "ランダムな麻雀の配牌を表示します",
+	}
+}
+
+func (c *MahjongCommand) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 	// API呼び出しに時間がかかる可能性があるため、応答を遅延させる
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
@@ -46,7 +40,7 @@ func (h *MahjongCommandHandler) Handle(ctx context.Context, s *discordgo.Session
 		return err
 	}
 
-	hand, err := h.service.GetRandomStartingHand(ctx)
+	hand, err := c.service.GetRandomStartingHand(ctx)
 	if err != nil {
 		log.Printf("Error fetching mahjong image: %v", err)
 		_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{

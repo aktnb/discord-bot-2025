@@ -8,35 +8,29 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type PingCommandDefinition struct{}
-
-func NewPingCommandDefinition() *PingCommandDefinition {
-	return &PingCommandDefinition{}
-}
-
-func (p *PingCommandDefinition) Name() string {
-	return "ping"
-}
-
-func (p *PingCommandDefinition) ToDiscordCommand() *discordgo.ApplicationCommand {
-	return &discordgo.ApplicationCommand{
-		Name:        p.Name(),
-		Description: "Pong!と応答します",
-	}
-}
-
-type PingCommandHandler struct {
+type PingCommand struct {
 	service *ping.Service
 }
 
-func NewPingCommandHandler(service *ping.Service) *PingCommandHandler {
-	return &PingCommandHandler{
+func NewPingCommand(service *ping.Service) *PingCommand {
+	return &PingCommand{
 		service: service,
 	}
 }
 
-func (h *PingCommandHandler) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
-	response, err := h.service.Ping(ctx)
+func (c *PingCommand) Name() string {
+	return "ping"
+}
+
+func (c *PingCommand) ToDiscordCommand() *discordgo.ApplicationCommand {
+	return &discordgo.ApplicationCommand{
+		Name:        c.Name(),
+		Description: "Pong!と応答します",
+	}
+}
+
+func (c *PingCommand) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+	response, err := c.service.Ping(ctx)
 	if err != nil {
 		log.Printf("Error handling ping command: %v", err)
 		return err

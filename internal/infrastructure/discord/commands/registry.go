@@ -3,41 +3,31 @@ package commands
 import "github.com/bwmarrin/discordgo"
 
 type CommandRegistry struct {
-	commands map[string]struct {
-		definition CommandDefinition
-		handler    CommandHandler
-	}
+	commands map[string]SlashCommand
 }
 
 func NewCommandRegistry() *CommandRegistry {
 	return &CommandRegistry{
-		commands: make(map[string]struct {
-			definition CommandDefinition
-			handler    CommandHandler
-		}),
+		commands: make(map[string]SlashCommand),
 	}
 }
 
-func (r *CommandRegistry) Register(def CommandDefinition, handler CommandHandler) {
-	r.commands[def.Name()] = struct {
-		definition CommandDefinition
-		handler    CommandHandler
-	}{definition: def, handler: handler}
+// Register は SlashCommand を登録する
+func (r *CommandRegistry) Register(cmd SlashCommand) {
+	r.commands[cmd.Name()] = cmd
 }
 
-func (r *CommandRegistry) GetHandler(name string) (CommandHandler, bool) {
+// GetCommand は指定された名前のコマンドを取得する
+func (r *CommandRegistry) GetCommand(name string) (SlashCommand, bool) {
 	cmd, ok := r.commands[name]
-	if !ok {
-		return nil, false
-	}
-	return cmd.handler, true
+	return cmd, ok
 }
 
 // GetAllDefinitions は全てのコマンド定義をDiscord API用に変換して返す
 func (r *CommandRegistry) GetAllDefinitions() []*discordgo.ApplicationCommand {
 	var definitions []*discordgo.ApplicationCommand
 	for _, cmd := range r.commands {
-		definitions = append(definitions, cmd.definition.ToDiscordCommand())
+		definitions = append(definitions, cmd.ToDiscordCommand())
 	}
 	return definitions
 }
