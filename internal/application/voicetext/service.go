@@ -29,7 +29,7 @@ func NewVoiceTextService(
 }
 
 func (s *Service) VoiceStateUpdate(ctx context.Context, cmd VoiceStateUpdateCommand) error {
-	if cmd.BeforeVoiceChannelID == cmd.AfterVoiceChannelID {
+	if *cmd.BeforeVoiceChannelID == *cmd.AfterVoiceChannelID {
 		return nil
 	}
 
