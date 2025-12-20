@@ -14,8 +14,7 @@ This project follows Clean Architecture (Hexagonal Architecture) with the follow
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Infrastructure Layer (Discord, External APIs)          │
-│  ├─ discord/commands/*/command.go (CommandDefinition)  │
-│  ├─ discord/commands/*/command.go (CommandHandler)     │
+│  ├─ discord/commands/*/command.go (SlashCommand)       │
 │  └─ */client.go (External API clients)                 │
 └─────────────────────────────────────────────────────────┘
                            ↓
@@ -48,7 +47,7 @@ Use when:
 
 **Layers needed:**
 - Application layer (service)
-- Infrastructure layer (command definition & handler)
+- Infrastructure layer (SlashCommand implementation)
 
 ### Pattern B: External API Integration (like `cat`)
 Use when:
@@ -59,7 +58,7 @@ Use when:
 **Layers needed:**
 - Domain layer (entities, repository interface, errors)
 - Application layer (service)
-- Infrastructure layer (API client, command definition & handler)
+- Infrastructure layer (API client, SlashCommand implementation)
 
 ## Step-by-Step Guide
 
@@ -85,7 +84,7 @@ func (s *Service) {Action}(ctx context.Context) (string, error) {
 }
 ```
 
-#### 2. Create Command Definition & Handler
+#### 2. Create SlashCommand Implementation
 **File:** `internal/infrastructure/discord/commands/{command}/command.go`
 
 ```go
@@ -99,35 +98,29 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type {Command}CommandDefinition struct{}
-
-func New{Command}CommandDefinition() *{Command}CommandDefinition {
-	return &{Command}CommandDefinition{}
+type {Command}Command struct {
+	service *{command}.Service
 }
 
-func (c *{Command}CommandDefinition) Name() string {
+func New{Command}Command(service *{command}.Service) *{Command}Command {
+	return &{Command}Command{
+		service: service,
+	}
+}
+
+func (c *{Command}Command) Name() string {
 	return "{command}"
 }
 
-func (c *{Command}CommandDefinition) ToDiscordCommand() *discordgo.ApplicationCommand {
+func (c *{Command}Command) ToDiscordCommand() *discordgo.ApplicationCommand {
 	return &discordgo.ApplicationCommand{
 		Name:        c.Name(),
 		Description: "Command description in Japanese",
 	}
 }
 
-type {Command}CommandHandler struct {
-	service *{command}.Service
-}
-
-func New{Command}CommandHandler(service *{command}.Service) *{Command}CommandHandler {
-	return &{Command}CommandHandler{
-		service: service,
-	}
-}
-
-func (h *{Command}CommandHandler) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
-	response, err := h.service.{Action}(ctx)
+func (c *{Command}Command) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+	response, err := c.service.{Action}(ctx)
 	if err != nil {
 		log.Printf("Error handling {command} command: %v", err)
 		return err
@@ -160,10 +153,8 @@ import (
 
 // Registration (after command registry creation)
 {command}Service := {command}app.New{Command}Service()
-{command}Def := {command}cmd.New{Command}CommandDefinition()
-{command}Handler := {command}cmd.New{Command}CommandHandler({command}Service)
-
-registry.Register({command}Def, {command}Handler)
+{command}Cmd := {command}cmd.New{Command}Command({command}Service)
+registry.Register({command}Cmd)
 ```
 
 ### Pattern B: External API Integration
@@ -299,7 +290,7 @@ func (c *{API}Client) Fetch{Entity}(ctx context.Context) (*{command}.{Entity}, e
 }
 ```
 
-#### 4. Create Command with Deferred Response
+#### 4. Create SlashCommand with Deferred Response
 
 **File:** `internal/infrastructure/discord/commands/{command}/command.go`
 ```go
@@ -313,34 +304,28 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type {Command}CommandDefinition struct{}
-
-func New{Command}CommandDefinition() *{Command}CommandDefinition {
-	return &{Command}CommandDefinition{}
+type {Command}Command struct {
+	service *app{command}.Service
 }
 
-func (c *{Command}CommandDefinition) Name() string {
+func New{Command}Command(service *app{command}.Service) *{Command}Command {
+	return &{Command}Command{
+		service: service,
+	}
+}
+
+func (c *{Command}Command) Name() string {
 	return "{command}"
 }
 
-func (c *{Command}CommandDefinition) ToDiscordCommand() *discordgo.ApplicationCommand {
+func (c *{Command}Command) ToDiscordCommand() *discordgo.ApplicationCommand {
 	return &discordgo.ApplicationCommand{
 		Name:        c.Name(),
 		Description: "Command description in Japanese",
 	}
 }
 
-type {Command}CommandHandler struct {
-	service *app{command}.Service
-}
-
-func New{Command}CommandHandler(service *app{command}.Service) *{Command}CommandHandler {
-	return &{Command}CommandHandler{
-		service: service,
-	}
-}
-
-func (h *{Command}CommandHandler) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (c *{Command}Command) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 	// Defer response for async operations
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
@@ -350,7 +335,7 @@ func (h *{Command}CommandHandler) Handle(ctx context.Context, s *discordgo.Sessi
 		return err
 	}
 
-	entity, err := h.service.Get{Entity}(ctx)
+	entity, err := c.service.Get{Entity}(ctx)
 	if err != nil {
 		log.Printf("Error fetching entity: %v", err)
 		_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
@@ -386,10 +371,8 @@ import (
 // Registration
 {api}Client := {api}.New{API}Client()
 {command}Service := {command}app.New{Command}Service({api}Client)
-{command}Def := {command}cmd.New{Command}CommandDefinition()
-{command}Handler := {command}cmd.New{Command}CommandHandler({command}Service)
-
-registry.Register({command}Def, {command}Handler)
+{command}Cmd := {command}cmd.New{Command}Command({command}Service)
+registry.Register({command}Cmd)
 ```
 
 ## Technical Considerations
@@ -413,20 +396,23 @@ Discord requires a response within 3 seconds, or the interaction will timeout. F
 - Include command name in log messages
 - Use structured logging format
 
-## Command Interfaces
+## SlashCommand Interface
 
-All commands must implement these interfaces defined in `internal/infrastructure/discord/commands/interfaces.go`:
+All commands must implement the SlashCommand interface defined in `internal/infrastructure/discord/commands/interfaces.go`:
 
 ```go
-type CommandDefinition interface {
+// SlashCommand は Discord スラッシュコマンドの定義と処理を統合したインターフェース
+type SlashCommand interface {
+	// Name はコマンド名を返す
 	Name() string
+	// ToDiscordCommand は Discord API 用のコマンド定義を返す
 	ToDiscordCommand() *discordgo.ApplicationCommand
-}
-
-type CommandHandler interface {
+	// Handle はコマンドの実行処理を行う
 	Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error
 }
 ```
+
+この統合インターフェースにより、コマンドの定義と処理が1つの構造体にまとめられ、コード量が削減され、保守性が向上します。
 
 ## Implementation Checklist
 
@@ -441,14 +427,16 @@ type CommandHandler interface {
   - [ ] Inject dependencies via constructor
 - [ ] Implement infrastructure layer
   - [ ] Create external API client (if needed)
-  - [ ] Create `CommandDefinition` struct
-  - [ ] Create `CommandHandler` struct
+  - [ ] Create `{Command}Command` struct implementing SlashCommand interface
+  - [ ] Implement `Name()` method
+  - [ ] Implement `ToDiscordCommand()` method
+  - [ ] Implement `Handle()` method
   - [ ] Use deferred response if operation may take >3 seconds
 - [ ] Register command in `main.go`
   - [ ] Add imports
   - [ ] Create service instance
-  - [ ] Create definition and handler instances
-  - [ ] Register with command registry
+  - [ ] Create command instance
+  - [ ] Register with command registry using `registry.Register(cmd)`
 - [ ] Test the command
   - [ ] Run `go build ./cmd/bot/main.go`
   - [ ] Start the bot
@@ -471,7 +459,7 @@ type CommandHandler interface {
 - `internal/infrastructure/discord/commands/cat/command.go`
 
 **Registration:**
-- `cmd/bot/main.go` (lines 50-66 for examples)
+- `cmd/bot/main.go` (lines 66-92 for examples)
 
 ## Directory Structure Example
 
@@ -491,5 +479,5 @@ internal/
     └── discord/
         └── commands/
             └── {command}/
-                └── command.go  # CommandDefinition & CommandHandler
+                └── command.go  # SlashCommand implementation
 ```
