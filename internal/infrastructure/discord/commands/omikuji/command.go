@@ -9,34 +9,28 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type OmikujiCommandDefinition struct{}
-
-func NewOmikujiCommandDefinition() *OmikujiCommandDefinition {
-	return &OmikujiCommandDefinition{}
-}
-
-func (o *OmikujiCommandDefinition) Name() string {
-	return "omikuji"
-}
-
-func (o *OmikujiCommandDefinition) ToDiscordCommand() *discordgo.ApplicationCommand {
-	return &discordgo.ApplicationCommand{
-		Name:        o.Name(),
-		Description: "今日の運勢を占います（同じ日は同じ結果になります）",
-	}
-}
-
-type OmikujiCommandHandler struct {
+type OmikujiCommand struct {
 	service *appomikuji.Service
 }
 
-func NewOmikujiCommandHandler(service *appomikuji.Service) *OmikujiCommandHandler {
-	return &OmikujiCommandHandler{
+func NewOmikujiCommand(service *appomikuji.Service) *OmikujiCommand {
+	return &OmikujiCommand{
 		service: service,
 	}
 }
 
-func (h *OmikujiCommandHandler) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (c *OmikujiCommand) Name() string {
+	return "omikuji"
+}
+
+func (c *OmikujiCommand) ToDiscordCommand() *discordgo.ApplicationCommand {
+	return &discordgo.ApplicationCommand{
+		Name:        c.Name(),
+		Description: "今日の運勢を占います（同じ日は同じ結果になります）",
+	}
+}
+
+func (c *OmikujiCommand) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 	// ユーザーID取得（nilチェック）
 	var userID string
 	if i.Member != nil && i.Member.User != nil {
@@ -49,7 +43,7 @@ func (h *OmikujiCommandHandler) Handle(ctx context.Context, s *discordgo.Session
 	}
 
 	// おみくじを引く
-	fortune, err := h.service.DrawFortune(ctx, userID)
+	fortune, err := c.service.DrawFortune(ctx, userID)
 	if err != nil {
 		log.Printf("Error drawing fortune: %v", err)
 		// ユーザーにエラーメッセージを返す

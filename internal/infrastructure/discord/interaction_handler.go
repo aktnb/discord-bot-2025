@@ -32,13 +32,13 @@ func (h *InteractionCreateHandler) Handle() func(*discordgo.Session, *discordgo.
 func (h *InteractionCreateHandler) routeApplicationCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	commandName := i.ApplicationCommandData().Name
 
-	handler, ok := h.registry.GetHandler(commandName)
+	cmd, ok := h.registry.GetCommand(commandName)
 	if !ok {
 		log.Printf("Unknown command: %s", commandName)
 		return
 	}
 
-	if err := handler.Handle(context.Background(), s, i); err != nil {
+	if err := cmd.Handle(context.Background(), s, i); err != nil {
 		log.Printf("Error handling command %s: %v", commandName, err)
 	}
 }

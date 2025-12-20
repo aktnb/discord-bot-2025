@@ -8,34 +8,28 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type CatCommandDefinition struct{}
-
-func NewCatCommandDefinition() *CatCommandDefinition {
-	return &CatCommandDefinition{}
+type CatCommand struct {
+	service *appcat.Service
 }
 
-func (c *CatCommandDefinition) Name() string {
+func NewCatCommand(service *appcat.Service) *CatCommand {
+	return &CatCommand{
+		service: service,
+	}
+}
+
+func (c *CatCommand) Name() string {
 	return "cat"
 }
 
-func (c *CatCommandDefinition) ToDiscordCommand() *discordgo.ApplicationCommand {
+func (c *CatCommand) ToDiscordCommand() *discordgo.ApplicationCommand {
 	return &discordgo.ApplicationCommand{
 		Name:        c.Name(),
 		Description: "ランダムな猫の画像を表示します",
 	}
 }
 
-type CatCommandHandler struct {
-	service *appcat.Service
-}
-
-func NewCatCommandHandler(service *appcat.Service) *CatCommandHandler {
-	return &CatCommandHandler{
-		service: service,
-	}
-}
-
-func (h *CatCommandHandler) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (c *CatCommand) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 	// まず応答を遅延させる（API呼び出しに時間がかかる可能性があるため）
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
@@ -45,7 +39,7 @@ func (h *CatCommandHandler) Handle(ctx context.Context, s *discordgo.Session, i 
 		return err
 	}
 
-	image, err := h.service.GetRandomCatImage(ctx)
+	image, err := c.service.GetRandomCatImage(ctx)
 	if err != nil {
 		log.Printf("Error fetching cat image: %v", err)
 		_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{

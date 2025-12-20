@@ -8,34 +8,28 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type DogCommandDefinition struct{}
-
-func NewDogCommandDefinition() *DogCommandDefinition {
-	return &DogCommandDefinition{}
+type DogCommand struct {
+	service *appdog.Service
 }
 
-func (c *DogCommandDefinition) Name() string {
+func NewDogCommand(service *appdog.Service) *DogCommand {
+	return &DogCommand{
+		service: service,
+	}
+}
+
+func (c *DogCommand) Name() string {
 	return "dog"
 }
 
-func (c *DogCommandDefinition) ToDiscordCommand() *discordgo.ApplicationCommand {
+func (c *DogCommand) ToDiscordCommand() *discordgo.ApplicationCommand {
 	return &discordgo.ApplicationCommand{
 		Name:        c.Name(),
 		Description: "ランダムな犬の画像を表示します",
 	}
 }
 
-type DogCommandHandler struct {
-	service *appdog.Service
-}
-
-func NewDogCommandHandler(service *appdog.Service) *DogCommandHandler {
-	return &DogCommandHandler{
-		service: service,
-	}
-}
-
-func (h *DogCommandHandler) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (c *DogCommand) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 	// まず応答を遅延させる（API呼び出しに時間がかかる可能性があるため）
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
@@ -45,7 +39,7 @@ func (h *DogCommandHandler) Handle(ctx context.Context, s *discordgo.Session, i 
 		return err
 	}
 
-	image, err := h.service.GetRandomDogImage(ctx)
+	image, err := c.service.GetRandomDogImage(ctx)
 	if err != nil {
 		log.Printf("Error fetching dog image: %v", err)
 		_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{

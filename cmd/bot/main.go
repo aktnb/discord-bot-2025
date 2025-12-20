@@ -65,41 +65,31 @@ func main() {
 
 	// Ping command
 	pingService := ping.NewPingService()
-	pingDef := pingcmd.NewPingCommandDefinition()
-	pingHandler := pingcmd.NewPingCommandHandler(pingService)
-
-	registry.Register(pingDef, pingHandler)
+	pingCmd := pingcmd.NewPingCommand(pingService)
+	registry.Register(pingCmd)
 
 	// Cat command
 	catAPIClient := catapi.NewCatAPIClient()
 	catService := cat.NewCatService(catAPIClient)
-	catDef := catcmd.NewCatCommandDefinition()
-	catHandler := catcmd.NewCatCommandHandler(catService)
-
-	registry.Register(catDef, catHandler)
+	catCmd := catcmd.NewCatCommand(catService)
+	registry.Register(catCmd)
 
 	// Dog command
 	dogAPIClient := dogapi.NewDogAPIClient()
 	dogService := dog.NewDogService(dogAPIClient)
-	dogDef := dogcmd.NewDogCommandDefinition()
-	dogHandler := dogcmd.NewDogCommandHandler(dogService)
-
-	registry.Register(dogDef, dogHandler)
+	dogCmd := dogcmd.NewDogCommand(dogService)
+	registry.Register(dogCmd)
 
 	// Mahjong command
 	mahjongAPIClient := mahjongapi.NewMahjongAPIClient()
 	mahjongService := mahjong.NewMahjongService(mahjongAPIClient)
-	mahjongDef := mahjongcmd.NewMahjongCommandDefinition()
-	mahjongHandler := mahjongcmd.NewMahjongCommandHandler(mahjongService)
-
-	registry.Register(mahjongDef, mahjongHandler)
+	mahjongCmd := mahjongcmd.NewMahjongCommand(mahjongService)
+	registry.Register(mahjongCmd)
 
 	// Omikuji command
 	omikujiService := omikuji.NewOmikujiService()
-	omikujiDef := omikujicmd.NewOmikujiCommandDefinition()
-	omikujiHandler := omikujicmd.NewOmikujiCommandHandler(omikujiService)
-
-	registry.Register(omikujiDef, omikujiHandler)
+	omikujiCmd := omikujicmd.NewOmikujiCommand(omikujiService)
+	registry.Register(omikujiCmd)
 
 	// Register handlers before opening session
 	commandRegistrar := commands.NewRegistrar(session, registry)
