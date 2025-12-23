@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/aktnb/discord-bot-go/internal/application/cat"
+	"github.com/aktnb/discord-bot-go/internal/application/collatz"
 	"github.com/aktnb/discord-bot-go/internal/application/dog"
 	"github.com/aktnb/discord-bot-go/internal/application/mahjong"
 	"github.com/aktnb/discord-bot-go/internal/application/omikuji"
@@ -18,6 +19,7 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands"
 	catcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/cat"
+	collatzcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/collatz"
 	dogcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/dog"
 	mahjongcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/mahjong"
 	omikujicmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/omikuji"
@@ -90,6 +92,11 @@ func main() {
 	omikujiService := omikuji.NewOmikujiService()
 	omikujiCmd := omikujicmd.NewOmikujiCommand(omikujiService)
 	registry.Register(omikujiCmd)
+
+	// Collatz command
+	collatzService := collatz.NewCollatzService()
+	collatzCmd := collatzcmd.NewCollatzCommand(collatzService)
+	registry.Register(collatzCmd)
 
 	// Register handlers before opening session
 	commandRegistrar := commands.NewRegistrar(session, registry)
