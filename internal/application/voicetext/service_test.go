@@ -12,6 +12,15 @@ import (
 
 // Mock implementations
 
+// Helper function to create test links
+func mustCreateVoiceTextLink(guildID discordid.GuildID, voiceChannelID discordid.VoiceChannelID, textChannelID discordid.TextChannelID) *voicetext.VoiceTextLink {
+	link, err := voicetext.NewVoiceTextLink(guildID, voiceChannelID, textChannelID)
+	if err != nil {
+		panic("failed to create test link: " + err.Error())
+	}
+	return link
+}
+
 type mockTx struct{}
 
 func (m *mockTx) Exec(ctx context.Context, sql string, arguments ...any) (db.CommandTag, error) {
@@ -254,7 +263,7 @@ func TestJoinVoice_ExistingLink(t *testing.T) {
 	txm := &mockTxManager{}
 	discord := &mockDiscordPort{}
 
-	existingLink, _ := voicetext.NewVoiceTextLink("guild123", "voice456", "text789")
+	existingLink := mustCreateVoiceTextLink("guild123", "voice456", "text789")
 	memberAdded := false
 
 	repo.findByVoiceChannelFunc = func(ctx context.Context, guildID discordid.GuildID, voiceChannelID discordid.VoiceChannelID) (*voicetext.VoiceTextLink, error) {
@@ -301,7 +310,7 @@ func TestJoinVoice_ExistingLinkTextChannelDeleted(t *testing.T) {
 	txm := &mockTxManager{}
 	discord := &mockDiscordPort{}
 
-	existingLink, _ := voicetext.NewVoiceTextLink("guild123", "voice456", "text789")
+	existingLink := mustCreateVoiceTextLink("guild123", "voice456", "text789")
 	textChannelCreated := false
 	linkUpdated := false
 
@@ -357,7 +366,7 @@ func TestLeaveVoice_LastMember(t *testing.T) {
 	txm := &mockTxManager{}
 	discord := &mockDiscordPort{}
 
-	existingLink, _ := voicetext.NewVoiceTextLink("guild123", "voice456", "text789")
+	existingLink := mustCreateVoiceTextLink("guild123", "voice456", "text789")
 	textChannelDeleted := false
 	linkDeleted := false
 
@@ -413,7 +422,7 @@ func TestLeaveVoice_NotLastMember(t *testing.T) {
 	txm := &mockTxManager{}
 	discord := &mockDiscordPort{}
 
-	existingLink, _ := voicetext.NewVoiceTextLink("guild123", "voice456", "text789")
+	existingLink := mustCreateVoiceTextLink("guild123", "voice456", "text789")
 	memberRemoved := false
 
 	repo.findByVoiceChannelFunc = func(ctx context.Context, guildID discordid.GuildID, voiceChannelID discordid.VoiceChannelID) (*voicetext.VoiceTextLink, error) {
@@ -489,7 +498,7 @@ func TestVoiceStateUpdate_JoinChannel(t *testing.T) {
 	discord := &mockDiscordPort{}
 
 	joinCalled := false
-	existingLink, _ := voicetext.NewVoiceTextLink("guild123", "voice111", "text111")
+	existingLink := mustCreateVoiceTextLink("guild123", "voice111", "text111")
 
 	repo.findByVoiceChannelFunc = func(ctx context.Context, guildID discordid.GuildID, voiceChannelID discordid.VoiceChannelID) (*voicetext.VoiceTextLink, error) {
 		if voiceChannelID == "voice111" {
@@ -547,7 +556,7 @@ func TestVoiceStateUpdate_LeaveChannel(t *testing.T) {
 	txm := &mockTxManager{}
 	discord := &mockDiscordPort{}
 
-	existingLink, _ := voicetext.NewVoiceTextLink("guild123", "voice456", "text789")
+	existingLink := mustCreateVoiceTextLink("guild123", "voice456", "text789")
 	leaveCalled := false
 
 	repo.findByVoiceChannelFunc = func(ctx context.Context, guildID discordid.GuildID, voiceChannelID discordid.VoiceChannelID) (*voicetext.VoiceTextLink, error) {
@@ -603,7 +612,7 @@ func TestVoiceStateUpdate_SwitchChannels(t *testing.T) {
 	txm := &mockTxManager{}
 	discord := &mockDiscordPort{}
 
-	existingLink1, _ := voicetext.NewVoiceTextLink("guild123", "voice456", "text789")
+	existingLink1 := mustCreateVoiceTextLink("guild123", "voice456", "text789")
 	leaveCalled := false
 	joinCalled := false
 	callOrder := []string{}
@@ -771,7 +780,7 @@ func TestLeaveVoice_ErrorHandling(t *testing.T) {
 		{
 			name: "delete text channel error",
 			setupMocks: func(repo *mockRepository, discord *mockDiscordPort) {
-				existingLink, _ := voicetext.NewVoiceTextLink("guild123", "voice456", "text789")
+				existingLink := mustCreateVoiceTextLink("guild123", "voice456", "text789")
 				repo.findByVoiceChannelFunc = func(ctx context.Context, guildID discordid.GuildID, voiceChannelID discordid.VoiceChannelID) (*voicetext.VoiceTextLink, error) {
 					return existingLink, nil
 				}
@@ -784,7 +793,7 @@ func TestLeaveVoice_ErrorHandling(t *testing.T) {
 		{
 			name: "delete link error",
 			setupMocks: func(repo *mockRepository, discord *mockDiscordPort) {
-				existingLink, _ := voicetext.NewVoiceTextLink("guild123", "voice456", "text789")
+				existingLink := mustCreateVoiceTextLink("guild123", "voice456", "text789")
 				repo.findByVoiceChannelFunc = func(ctx context.Context, guildID discordid.GuildID, voiceChannelID discordid.VoiceChannelID) (*voicetext.VoiceTextLink, error) {
 					return existingLink, nil
 				}
