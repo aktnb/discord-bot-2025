@@ -2,11 +2,6 @@ name: CI
 
 on:
   pull_request:
-    branches:
-      - main
-      - develop
-      - '*/develop'
-      - '*/feature/**'
 
 permissions:
   contents: read
