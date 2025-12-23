@@ -80,7 +80,7 @@ func TestCollatzRules(t *testing.T) {
 	sequence = NewSequence(3)
 	sequence.Calculate()
 
-	// 3 → 10 → ...
+	// 3 → 10 → ... (3*3 + 1 = 10)
 	if sequence.Steps[1].Value != 10 {
 		t.Errorf("expected second step to be 10 (3*3+1), got %d", sequence.Steps[1].Value)
 	}

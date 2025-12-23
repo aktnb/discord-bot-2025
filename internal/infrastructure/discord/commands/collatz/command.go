@@ -40,13 +40,8 @@ func (c *CollatzCommand) ToDiscordCommand() *discordgo.ApplicationCommand {
 }
 
 func (c *CollatzCommand) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
-	// パラメータ取得
+	// パラメータ取得（Discord enforces required parameters）
 	options := i.ApplicationCommandData().Options
-	if len(options) == 0 {
-		log.Printf("Error: no options provided")
-		return fmt.Errorf("number parameter is required")
-	}
-
 	number := options[0].IntValue()
 
 	// 計算処理に時間がかかる可能性があるため、応答を遅延させる
