@@ -13,6 +13,6 @@ func NewFakerService() *Service {
 }
 
 // GetRandomEpisode は Faker の伝説エピソードをランダムに1つ返す
-func (s *Service) GetRandomEpisode(ctx context.Context) (string, error) {
+func (s *Service) GetRandomEpisode(ctx context.Context) (faker.Episode, error) {
 	return faker.RandomEpisode(), nil
 }

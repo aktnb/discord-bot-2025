@@ -2,6 +2,7 @@ package faker
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	appfaker "github.com/aktnb/discord-bot-go/internal/application/faker"
@@ -39,7 +40,7 @@ func (c *FakerCommand) Handle(ctx context.Context, s *discordgo.Session, i *disc
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: episode,
+			Content: fmt.Sprintf("Faker伝説 その%d\n> %s", episode.Number, episode.Text),
 		},
 	})
 	if err != nil {
