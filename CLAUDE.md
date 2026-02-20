@@ -63,6 +63,8 @@ migrate create -ext sql -dir db/migrations -seq <migration_name>
   - `model.go`: エンティティとビジネスロジック
   - `repository.go`: リポジトリインターフェース
   - `errors.go`: ドメインエラー定義
+- `internal/domain/faker/`: Faker 伝説エピソード機能のドメインモデル
+  - `model.go`: エピソード一覧とランダム選択ロジック
 - `internal/shared/discordid/`: 共有ドメインオブジェクト（Discord ID 型定義）
 
 #### アプリケーション層
@@ -70,6 +72,20 @@ migrate create -ext sql -dir db/migrations -seq <migration_name>
 - `internal/application/voicetext/`: ボイステキストリンク機能のユースケース
   - `service.go`: アプリケーションサービス
   - `commands.go`: Discord スラッシュコマンドの実装
+- `internal/application/faker/`: Faker 伝説エピソード機能のユースケース
+  - `service.go`: アプリケーションサービス
+
+#### スラッシュコマンド一覧
+
+| コマンド | 説明 | パッケージ |
+|---|---|---|
+| `/ping` | 疎通確認 | `internal/infrastructure/discord/commands/ping/` |
+| `/cat` | ランダムな猫画像を表示 | `internal/infrastructure/discord/commands/cat/` |
+| `/dog` | ランダムな犬画像を表示 | `internal/infrastructure/discord/commands/dog/` |
+| `/mahjong` | 麻雀牌をランダムに引く | `internal/infrastructure/discord/commands/mahjong/` |
+| `/omikuji` | 今日の運勢を占う（ユーザー＋日付で決定的） | `internal/infrastructure/discord/commands/omikuji/` |
+| `/collatz` | コラッツ予想の計算 | `internal/infrastructure/discord/commands/collatz/` |
+| `/faker` | LOL プロプレイヤー Faker の伝説エピソードをランダムに紹介 | `internal/infrastructure/discord/commands/faker/` |
 
 #### インターフェース層（ポート定義）
 
