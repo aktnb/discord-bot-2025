@@ -2,6 +2,12 @@ package faker
 
 import "math/rand/v2"
 
+// Episode は Faker の伝説エピソード
+type Episode struct {
+	Number int
+	Text   string
+}
+
 // episodes は Faker の伝説エピソード一覧
 var episodes = []string{
 	"1vs1でペンタキルは当たり前",
@@ -31,6 +37,10 @@ var episodes = []string{
 }
 
 // RandomEpisode はエピソードをランダムに1つ返す
-func RandomEpisode() string {
-	return episodes[rand.IntN(len(episodes))]
+func RandomEpisode() Episode {
+	i := rand.IntN(len(episodes))
+	return Episode{
+		Number: i + 1,
+		Text:   episodes[i],
+	}
 }
