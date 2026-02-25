@@ -11,6 +11,7 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/application/collatz"
 	"github.com/aktnb/discord-bot-go/internal/application/dog"
 	"github.com/aktnb/discord-bot-go/internal/application/faker"
+	"github.com/aktnb/discord-bot-go/internal/application/jeffdean"
 	"github.com/aktnb/discord-bot-go/internal/application/mahjong"
 	"github.com/aktnb/discord-bot-go/internal/application/omikuji"
 	"github.com/aktnb/discord-bot-go/internal/application/ping"
@@ -23,6 +24,7 @@ import (
 	collatzcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/collatz"
 	dogcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/dog"
 	fakercmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/faker"
+	jeffdeancmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/jeffdean"
 	mahjongcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/mahjong"
 	omikujicmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/omikuji"
 	pingcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/ping"
@@ -104,6 +106,11 @@ func main() {
 	fakerService := faker.NewFakerService()
 	fakerCmd := fakercmd.NewFakerCommand(fakerService)
 	registry.Register(fakerCmd)
+
+	// Jeff Dean command
+	jeffDeanService := jeffdean.NewJeffDeanService()
+	jeffDeanCmd := jeffdeancmd.NewJeffDeanCommand(jeffDeanService)
+	registry.Register(jeffDeanCmd)
 
 	// Register handlers before opening session
 	commandRegistrar := commands.NewRegistrar(session, registry)
