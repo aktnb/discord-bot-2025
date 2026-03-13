@@ -1,0 +1,34 @@
+[Unit]
+Description=Discord Bot Staging Service
+After=network.target
+
+[Service]
+Type=simple
+User=bot_user
+Group=bot_user
+WorkingDirectory=/opt/bot-staging
+
+# 環境変数ファイルを読み込む
+EnvironmentFile=/opt/bot-staging/shared/bot.env
+
+# currentシンボリックリンクを通じてバイナリを実行
+ExecStart=/opt/bot-staging/current
+
+# 再起動ポリシー
+Restart=always
+RestartSec=10
+
+# セキュリティ設定
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/bot-staging
+
+# ログ設定
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=discord-bot-staging
+
+[Install]
+WantedBy=multi-user.target
