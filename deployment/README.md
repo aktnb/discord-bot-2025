@@ -28,15 +28,66 @@
 └── previous -> releases/v1.0.0/discord-bot-linux-arm64 # 前のバージョン（ロールバック用）
 ```
 
+## 前提条件
+
+### システム要件
+
+- ARM64 Ubuntu 24.04.3 LTS
+- インターネット接続（GitHub Releases へのアクセス、Radiko ストリームへのアクセス）
+
+### 必要なシステムパッケージ
+
+| パッケージ | 用途 |
+|---|---|
+| `ffmpeg` | Radiko HLSストリームをOpus音声に変換してDiscordへ送信 |
+| `curl` | GitHub Releases からバイナリをダウンロード |
+
 ## 初回セットアップ
 
-### 1. bot_user の作成
+### セットアップスクリプトを使う場合（推奨）
+
+リポジトリをクローンしたサーバー上で、1コマンドでセットアップできます：
 
 ```bash
-sudo useradd -r -m -d /opt/bot-user -s /bin/bash bot_user
+sudo bash deployment/setup.sh
 ```
 
-### 2. 必要なディレクトリの作成
+スクリプトが以下を自動的に行います：
+- `ffmpeg`、`curl` などの必要パッケージのインストール
+- `bot_user` ユーザーの作成
+- ディレクトリ構造の作成
+- 環境変数ファイルのテンプレート作成
+- systemd サービスのインストール・有効化
+- 初回デプロイの実行
+
+セットアップ後、環境変数ファイルを編集してください：
+
+```bash
+sudo vi /opt/bot-user/shared/bot.env
+```
+
+### 手動セットアップ
+
+#### 1. 必要なパッケージのインストール
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ffmpeg curl
+```
+
+ffmpeg のインストールを確認：
+
+```bash
+ffmpeg -version
+```
+
+#### 2. bot_user の作成
+
+```bash
+sudo useradd -r -m -d /opt/bot-user -s /usr/sbin/nologin bot_user
+```
+
+#### 3. 必要なディレクトリの作成
 
 ```bash
 sudo mkdir -p /opt/bot-user/shared
@@ -44,7 +95,7 @@ sudo mkdir -p /opt/bot-user/releases
 sudo chown -R bot_user:bot_user /opt/bot-user
 ```
 
-### 3. 環境変数ファイルの作成
+#### 4. 環境変数ファイルの作成
 
 ```bash
 sudo tee /opt/bot-user/shared/bot.env > /dev/null <<EOF
@@ -56,14 +107,14 @@ sudo chmod 600 /opt/bot-user/shared/bot.env
 sudo chown bot_user:bot_user /opt/bot-user/shared/bot.env
 ```
 
-### 4. bot-update スクリプトのインストール
+#### 5. bot-update スクリプトのインストール
 
 ```bash
 sudo cp deployment/bot-update /usr/local/bin/bot-update
 sudo chmod +x /usr/local/bin/bot-update
 ```
 
-### 5. systemd サービスのインストール
+#### 6. systemd サービスのインストール
 
 ```bash
 # サービスファイルをコピー
@@ -75,7 +126,7 @@ sudo cp deployment/systemd/bot-update.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 ```
 
-### 6. サービスの有効化と起動
+#### 7. サービスの有効化と起動
 
 ```bash
 # bot.service を有効化（自動起動設定）
@@ -86,7 +137,7 @@ sudo systemctl enable bot-update.timer
 sudo systemctl start bot-update.timer
 ```
 
-### 7. 初回デプロイの実行
+#### 8. 初回デプロイの実行
 
 ```bash
 # 手動で初回デプロイを実行
@@ -214,6 +265,25 @@ echo "v1.0.0" | sudo tee /opt/bot-user/shared/last_tag
 3. バイナリが存在し、実行権限があるか確認：
    ```bash
    ls -la /opt/bot-user/current
+   ```
+
+### ラジオが再生されない（`/radiko play` が動作しない）
+
+1. ffmpeg がインストールされているか確認：
+   ```bash
+   which ffmpeg
+   ffmpeg -version
+   ```
+
+2. ffmpeg がインストールされていない場合：
+   ```bash
+   sudo apt-get install -y ffmpeg
+   ```
+
+3. ffmpeg が Radiko ストリームにアクセスできるか確認：
+   ```bash
+   # 認証なしで接続テスト（実際には認証が必要）
+   curl -I https://f-radiko.smartstream.ne.jp/TBS/_definst_/simul-stream.stream/playlist.m3u8
    ```
 
 ### 自動更新が動作しない
