@@ -1,0 +1,57 @@
+name: Deploy Staging (ARM64)
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine staging tag
+        id: determine_tag
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          TIMESTAMP=$(date -u +"%Y%m%d%H%M%S")
+          echo "tag=staging-${TIMESTAMP}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "Using staging tag: staging-${TIMESTAMP}-${SHORT_SHA}"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Build for ARM64 (Linux)
+        run: |
+          GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=${{ steps.determine_tag.outputs.tag }}" -o discord-bot-linux-arm64 ./cmd/bot
+        env:
+          CGO_ENABLED: 0
+
+      - name: Create tar.gz archive
+        run: |
+          tar -czf discord-bot-linux-arm64.tar.gz discord-bot-linux-arm64
+          ls -lh discord-bot-linux-arm64.tar.gz
+
+      - name: Generate SHA256 checksum
+        run: |
+          sha256sum discord-bot-linux-arm64.tar.gz > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create Staging Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.determine_tag.outputs.tag }}
+          name: Staging ${{ steps.determine_tag.outputs.tag }}
+          prerelease: true
+          files: |
+            discord-bot-linux-arm64.tar.gz
+            SHA256SUMS.txt
+          generate_release_notes: true
