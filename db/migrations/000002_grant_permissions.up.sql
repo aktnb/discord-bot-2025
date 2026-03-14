@@ -1,3 +1,10 @@
+-- bot_user ロールが存在しない場合は作成
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'bot_user') THEN
+    CREATE ROLE bot_user;
+  END IF;
+END $$;
+
 -- bot_user に voice_text_links テーブルへの権限を付与
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE voice_text_links TO bot_user;
 

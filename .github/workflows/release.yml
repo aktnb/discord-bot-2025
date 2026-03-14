@@ -1,4 +1,4 @@
-name: Build and Release (ARM64)
+name: Build and Deploy
 
 on:
   workflow_dispatch:
@@ -15,9 +15,10 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
-  build-and-release:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -84,27 +85,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
-
-      - name: Build for ARM64 (Linux)
-        run: |
-          GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=${{ steps.determine_tag.outputs.tag }}" -o discord-bot-linux-arm64 ./cmd/bot
-        env:
-          CGO_ENABLED: 0
-
-      - name: Create tar.gz archive
-        run: |
-          tar -czf discord-bot-linux-arm64.tar.gz discord-bot-linux-arm64
-          ls -lh discord-bot-linux-arm64.tar.gz
-
-      - name: Generate SHA256 checksum
-        run: |
-          sha256sum discord-bot-linux-arm64.tar.gz > SHA256SUMS.txt
-          cat SHA256SUMS.txt
-
       - name: Set release name
         id: release_name
         run: |
@@ -117,13 +97,52 @@ jobs:
             echo "name=Release $TAG" >> $GITHUB_OUTPUT
           fi
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          build-args: |
+            VERSION=${{ steps.determine_tag.outputs.tag }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/discord-bot-go:${{ steps.determine_tag.outputs.tag }}
+            ghcr.io/${{ github.repository_owner }}/discord-bot-go:latest
+
+      - name: Copy docker-compose.deploy.yml to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: docker-compose.deploy.yml
+          target: /opt/discord-bot/
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/discord-bot
+            docker compose -f docker-compose.deploy.yml pull
+            docker compose -f docker-compose.deploy.yml up -d
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.determine_tag.outputs.tag }}
           name: ${{ steps.release_name.outputs.name }}
           prerelease: ${{ github.event.inputs.prerelease }}
-          files: |
-            discord-bot-linux-arm64.tar.gz
-            SHA256SUMS.txt
           generate_release_notes: true
