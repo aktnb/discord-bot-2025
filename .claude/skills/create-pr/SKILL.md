@@ -5,6 +5,19 @@ description: >
   ユーザーが PR 作成、ブランチ作成、GitHub への変更提出を依頼したときは必ずこのスキルを使用すること。
   「PR を作って」「プルリクを出して」「ブランチを切って PR を作りたい」「feature ブランチに切り替えて」などの
   依頼があった場合に適用する。gh コマンドを使って PR を作成する方法を提供する。
+allowed-tools:
+  - Bash(git fetch*)
+  - Bash(git status*)
+  - Bash(git log*)
+  - Bash(git diff*)
+  - Bash(git stash*)
+  - Bash(git switch*)
+  - Bash(git checkout*)
+  - Bash(git pull*)
+  - Bash(git add*)
+  - Bash(git commit*)
+  - Bash(git push*)
+  - Bash(gh pr *)
 ---
 
 # PR 作成スキル
@@ -15,12 +28,12 @@ description: >
 
 現在のブランチに応じて、作成するブランチパターンが決まる。
 
-| 現在のブランチ | 作成するブランチ |
-|---|---|
-| `master` | `feature/<作業内容>` |
-| `develop` | `feature/<作業内容>` |
-| `<project>/develop` | `<project>/feature/<作業内容>` |
-| `<project>/feature/<X>`（依存関係あり） | `<project>/feature/<Y>` |
+| 現在のブランチ                          | 作成するブランチ               |
+| --------------------------------------- | ------------------------------ |
+| `master`                                | `feature/<作業内容>`           |
+| `develop`                               | `feature/<作業内容>`           |
+| `<project>/develop`                     | `<project>/feature/<作業内容>` |
+| `<project>/feature/<X>`（依存関係あり） | `<project>/feature/<Y>`        |
 
 ## PR の base branch ルール
 
@@ -83,18 +96,18 @@ gh pr create \
 
 ### 主要なオプション
 
-| オプション | 短縮形 | 説明 |
-|---|---|---|
-| `--title` | `-t` | PR のタイトル |
-| `--body` | `-b` | PR の本文（Markdown 可） |
-| `--base` | `-B` | マージ先のブランチ |
-| `--head` | `-H` | PR の head ブランチ（省略時は現在のブランチ） |
-| `--draft` | `-d` | ドラフト PR として作成 |
-| `--reviewer` | `-r` | レビュワーを指定（カンマ区切りで複数可） |
-| `--assignee` | `-a` | アサイニーを指定（`@me` で自分自身） |
-| `--label` | `-l` | ラベルを追加 |
-| `--fill` | `-f` | コミットメッセージからタイトル・本文を自動入力 |
-| `--web` | `-w` | ブラウザで PR 作成画面を開く |
+| オプション   | 短縮形 | 説明                                           |
+| ------------ | ------ | ---------------------------------------------- |
+| `--title`    | `-t`   | PR のタイトル                                  |
+| `--body`     | `-b`   | PR の本文（Markdown 可）                       |
+| `--base`     | `-B`   | マージ先のブランチ                             |
+| `--head`     | `-H`   | PR の head ブランチ（省略時は現在のブランチ）  |
+| `--draft`    | `-d`   | ドラフト PR として作成                         |
+| `--reviewer` | `-r`   | レビュワーを指定（カンマ区切りで複数可）       |
+| `--assignee` | `-a`   | アサイニーを指定（`@me` で自分自身）           |
+| `--label`    | `-l`   | ラベルを追加                                   |
+| `--fill`     | `-f`   | コミットメッセージからタイトル・本文を自動入力 |
+| `--web`      | `-w`   | ブラウザで PR 作成画面を開く                   |
 
 ### ベストプラクティス: HEREDOC でボディを渡す
 
