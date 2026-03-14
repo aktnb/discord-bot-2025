@@ -20,4 +20,6 @@ WORKDIR /app
 COPY --from=builder /app/bot .
 COPY --from=builder /go/bin/migrate /usr/local/bin/migrate
 COPY db/migrations ./migrations
-CMD ["./bot"]
+COPY entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
+ENTRYPOINT ["./entrypoint.sh"]

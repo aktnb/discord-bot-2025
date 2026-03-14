@@ -16,29 +16,23 @@ services:
       timeout: 5s
       retries: 5
 
-  migrate:
+  bot:
     image: ghcr.io/aktnb/discord-bot-go:latest
-    command:
-      - /usr/local/bin/migrate
-      - -path
-      - /app/migrations
-      - -database
-      - ${DATABASE_URL}
-      - up
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     env_file:
       - .env
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
-  bot:
-    image: ghcr.io/aktnb/discord-bot-go:latest
+  watchtower:
+    image: containrrr/watchtower
     restart: unless-stopped
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-    env_file:
-      - .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --label-enable --interval 300 --cleanup
 
   portainer:
     image: portainer/portainer-ce:latest

@@ -97,6 +97,28 @@ jobs:
             echo "name=Release $TAG" >> $GITHUB_OUTPUT
           fi
 
+      - name: Set image tags
+        id: image_tags
+        run: |
+          TAG="${{ steps.determine_tag.outputs.tag }}"
+          IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
+          REGISTRY="ghcr.io/${{ github.repository_owner }}/discord-bot-go"
+
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            {
+              echo "tags<<EOF"
+              echo "$REGISTRY:$TAG"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
+          else
+            {
+              echo "tags<<EOF"
+              echo "$REGISTRY:$TAG"
+              echo "$REGISTRY:latest"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -115,29 +137,7 @@ jobs:
           push: true
           build-args: |
             VERSION=${{ steps.determine_tag.outputs.tag }}
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/discord-bot-go:${{ steps.determine_tag.outputs.tag }}
-            ghcr.io/${{ github.repository_owner }}/discord-bot-go:latest
-
-      - name: Copy docker-compose.deploy.yml to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: docker-compose.deploy.yml
-          target: /opt/discord-bot/
-
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /opt/discord-bot
-            docker compose -f docker-compose.deploy.yml pull
-            docker compose -f docker-compose.deploy.yml up -d
+          tags: ${{ steps.image_tags.outputs.tags }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
