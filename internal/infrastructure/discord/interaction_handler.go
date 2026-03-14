@@ -23,6 +23,8 @@ func (h *InteractionCreateHandler) Handle() func(*discordgo.Session, *discordgo.
 		switch i.Type {
 		case discordgo.InteractionApplicationCommand:
 			h.routeApplicationCommand(s, i)
+		case discordgo.InteractionApplicationCommandAutocomplete:
+			h.routeAutocomplete(s, i)
 		default:
 			log.Printf("Unsupported interaction type: %v", i.Type)
 		}
@@ -40,5 +42,23 @@ func (h *InteractionCreateHandler) routeApplicationCommand(s *discordgo.Session,
 
 	if err := cmd.Handle(context.Background(), s, i); err != nil {
 		log.Printf("Error handling command %s: %v", commandName, err)
+	}
+}
+
+func (h *InteractionCreateHandler) routeAutocomplete(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	commandName := i.ApplicationCommandData().Name
+
+	cmd, ok := h.registry.GetCommand(commandName)
+	if !ok {
+		return
+	}
+
+	ac, ok := cmd.(commands.AutocompleteHandler)
+	if !ok {
+		return
+	}
+
+	if err := ac.HandleAutocomplete(context.Background(), s, i); err != nil {
+		log.Printf("Error handling autocomplete for %s: %v", commandName, err)
 	}
 }

@@ -23,3 +23,8 @@ type GuildSlashCommand interface {
 	// GuildIDs はコマンドを登録するギルド ID の一覧を返す
 	GuildIDs() []string
 }
+
+// AutocompleteHandler はオートコンプリートに対応するコマンドが実装するオプショナルインターフェース
+type AutocompleteHandler interface {
+	HandleAutocomplete(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error
+}

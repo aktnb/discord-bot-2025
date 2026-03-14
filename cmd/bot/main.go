@@ -16,6 +16,7 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/application/mahjong"
 	"github.com/aktnb/discord-bot-go/internal/application/omikuji"
 	"github.com/aktnb/discord-bot-go/internal/application/ping"
+	appradio "github.com/aktnb/discord-bot-go/internal/application/radio"
 	versionapp "github.com/aktnb/discord-bot-go/internal/application/version"
 	"github.com/aktnb/discord-bot-go/internal/application/voicetext"
 	"github.com/aktnb/discord-bot-go/internal/application/yamada"
@@ -32,11 +33,13 @@ import (
 	mahjongcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/mahjong"
 	omikujicmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/omikuji"
 	pingcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/ping"
+	radiocmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/radio"
 	versioncmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/version"
 	yamadacmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/yamada"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/dogapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/mahjongapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/persistence"
+	"github.com/aktnb/discord-bot-go/internal/infrastructure/radiko"
 	"github.com/bwmarrin/discordgo"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -132,6 +135,12 @@ func main() {
 	yamadaService := yamada.NewYamadaService()
 	yamadaCmd := yamadacmd.NewYamadaCommand(yamadaService)
 	registry.Register(yamadaCmd)
+
+	// Radio command
+	radikoClient := radiko.NewClient()
+	radioService := appradio.NewService(radikoClient)
+	radioCmd := radiocmd.NewRadioCommand(radioService)
+	registry.Register(radioCmd)
 
 	// Register handlers before opening session
 	commandRegistrar := commands.NewRegistrar(session, registry)
