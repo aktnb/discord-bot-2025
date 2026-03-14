@@ -15,7 +15,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o b
 
 # 実行ステージ
 FROM alpine:3
-RUN apk --no-cache add ca-certificates tzdata
+# ca-certificates, tzdata: 基本パッケージ
+# ffmpeg: ラジオストリームのデコード・エンコードに使用
+RUN apk --no-cache add ca-certificates tzdata ffmpeg
 WORKDIR /app
 COPY --from=builder /app/bot .
 COPY --from=builder /go/bin/migrate /usr/local/bin/migrate
