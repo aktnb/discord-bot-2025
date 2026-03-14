@@ -15,3 +15,8 @@ type SlashCommand interface {
 	// Handle はコマンドの実行処理を行う
 	Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error
 }
+
+// AutocompleteHandler はオートコンプリートに対応するコマンドが実装するオプショナルインターフェース
+type AutocompleteHandler interface {
+	HandleAutocomplete(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error
+}
