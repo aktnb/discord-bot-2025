@@ -1,0 +1,20 @@
+{
+  "skill_name": "create-pr",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "今 master ブランチにいます。新しいスラッシュコマンド /hello を追加する作業をしたいので、適切なブランチを切って、作業後に PR を作るまでの手順を教えてください。",
+      "expected_output": "master から feature/add-hello-command（またはそれに近い名前）のブランチを切り、gh pr create --base master で PR を作る手順を示す"
+    },
+    {
+      "id": 1,
+      "prompt": "voice-text-link/develop ブランチにいます。データベースのマイグレーションファイルを追加したいです。ブランチを作って PR を出す方法を教えてください。",
+      "expected_output": "voice-text-link/feature/add-migration などのブランチを切り、gh pr create --base voice-text-link/develop で PR を作る手順を示す"
+    },
+    {
+      "id": 2,
+      "prompt": "PR を作りたいです。gh コマンドで reviewe も指定したいし、draft にもしたいです。どうすればいいですか？",
+      "expected_output": "gh pr create に --reviewer と --draft オプションを付けた使い方を示す"
+    }
+  ]
+}
