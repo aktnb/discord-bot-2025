@@ -11,6 +11,7 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/application/collatz"
 	"github.com/aktnb/discord-bot-go/internal/application/dog"
 	"github.com/aktnb/discord-bot-go/internal/application/faker"
+	"github.com/aktnb/discord-bot-go/internal/application/ichiro"
 	"github.com/aktnb/discord-bot-go/internal/application/jeffdean"
 	"github.com/aktnb/discord-bot-go/internal/application/mahjong"
 	"github.com/aktnb/discord-bot-go/internal/application/omikuji"
@@ -24,6 +25,7 @@ import (
 	collatzcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/collatz"
 	dogcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/dog"
 	fakercmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/faker"
+	ichirocmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/ichiro"
 	jeffdeancmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/jeffdean"
 	mahjongcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/mahjong"
 	omikujicmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/omikuji"
@@ -106,6 +108,11 @@ func main() {
 	fakerService := faker.NewFakerService()
 	fakerCmd := fakercmd.NewFakerCommand(fakerService)
 	registry.Register(fakerCmd)
+
+	// Ichiro command
+	ichiroService := ichiro.NewIchiroService()
+	ichiroCmd := ichirocmd.NewIchiroCommand(ichiroService)
+	registry.Register(ichiroCmd)
 
 	// Jeff Dean command
 	jeffDeanService := jeffdean.NewJeffDeanService()
