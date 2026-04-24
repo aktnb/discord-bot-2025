@@ -1,52 +1,15 @@
 package faker
 
 import (
-	"context"
-	"fmt"
-	"log"
-
 	appfaker "github.com/aktnb/discord-bot-go/internal/application/faker"
-	"github.com/bwmarrin/discordgo"
+	legendcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/legend"
 )
 
-type FakerCommand struct {
-	service *appfaker.Service
-}
-
-func NewFakerCommand(service *appfaker.Service) *FakerCommand {
-	return &FakerCommand{
-		service: service,
-	}
-}
-
-func (c *FakerCommand) Name() string {
-	return "faker"
-}
-
-func (c *FakerCommand) ToDiscordCommand() *discordgo.ApplicationCommand {
-	return &discordgo.ApplicationCommand{
-		Name:        c.Name(),
-		Description: "LOL プロプレイヤー Faker の伝説エピソードをランダムに紹介します",
-	}
-}
-
-func (c *FakerCommand) Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
-	episode, err := c.service.GetRandomEpisode(ctx)
-	if err != nil {
-		log.Printf("Error getting faker episode: %v", err)
-		return err
-	}
-
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("Faker伝説 その%d\n> %s", episode.Number, episode.Text),
-		},
-	})
-	if err != nil {
-		log.Printf("Error responding to faker: %v", err)
-		return err
-	}
-
-	return nil
+func NewFakerCommand(service *appfaker.Service) *legendcmd.Command {
+	return legendcmd.New(
+		"faker",
+		"LOL プロプレイヤー Faker の伝説エピソードをランダムに紹介します",
+		"Faker",
+		service.GetRandomEpisode,
+	)
 }
