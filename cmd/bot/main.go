@@ -17,6 +17,7 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/application/omikuji"
 	"github.com/aktnb/discord-bot-go/internal/application/ping"
 	"github.com/aktnb/discord-bot-go/internal/application/voicetext"
+	"github.com/aktnb/discord-bot-go/internal/application/yamada"
 	"github.com/aktnb/discord-bot-go/internal/config"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/catapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord"
@@ -30,6 +31,7 @@ import (
 	mahjongcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/mahjong"
 	omikujicmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/omikuji"
 	pingcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/ping"
+	yamadacmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/yamada"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/dogapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/mahjongapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/persistence"
@@ -118,6 +120,11 @@ func main() {
 	jeffDeanService := jeffdean.NewJeffDeanService()
 	jeffDeanCmd := jeffdeancmd.NewJeffDeanCommand(jeffDeanService)
 	registry.Register(jeffDeanCmd)
+
+	// Yamada command (guild-specific)
+	yamadaService := yamada.NewYamadaService()
+	yamadaCmd := yamadacmd.NewYamadaCommand(yamadaService)
+	registry.Register(yamadaCmd)
 
 	// Register handlers before opening session
 	commandRegistrar := commands.NewRegistrar(session, registry)
