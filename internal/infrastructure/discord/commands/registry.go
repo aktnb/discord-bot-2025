@@ -23,6 +23,15 @@ func (r *CommandRegistry) GetCommand(name string) (SlashCommand, bool) {
 	return cmd, ok
 }
 
+// GetAllCommands は全てのコマンドを返す
+func (r *CommandRegistry) GetAllCommands() []SlashCommand {
+	cmds := make([]SlashCommand, 0, len(r.commands))
+	for _, cmd := range r.commands {
+		cmds = append(cmds, cmd)
+	}
+	return cmds
+}
+
 // GetAllDefinitions は全てのコマンド定義をDiscord API用に変換して返す
 func (r *CommandRegistry) GetAllDefinitions() []*discordgo.ApplicationCommand {
 	var definitions []*discordgo.ApplicationCommand

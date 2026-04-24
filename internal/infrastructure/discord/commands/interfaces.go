@@ -15,3 +15,11 @@ type SlashCommand interface {
 	// Handle はコマンドの実行処理を行う
 	Handle(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error
 }
+
+// GuildSlashCommand はギルド固有のスラッシュコマンド
+// このインターフェースを実装するコマンドは、指定されたギルドにのみ登録される
+type GuildSlashCommand interface {
+	SlashCommand
+	// GuildIDs はコマンドを登録するギルド ID の一覧を返す
+	GuildIDs() []string
+}
