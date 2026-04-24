@@ -1,12 +1,6 @@
 package ichiro
 
-import "math/rand/v2"
-
-// Episode は全盛期のイチロー伝説エピソード
-type Episode struct {
-	Number int
-	Text   string
-}
+import "github.com/aktnb/discord-bot-go/internal/domain/legend"
 
 // episodes は全盛期のイチロー伝説エピソード一覧
 var episodes = []string{
@@ -31,10 +25,6 @@ var episodes = []string{
 }
 
 // RandomEpisode はエピソードをランダムに1つ返す
-func RandomEpisode() Episode {
-	i := rand.IntN(len(episodes))
-	return Episode{
-		Number: i + 1,
-		Text:   episodes[i],
-	}
+func RandomEpisode() legend.Episode {
+	return legend.Random(episodes)
 }

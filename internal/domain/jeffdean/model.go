@@ -1,12 +1,6 @@
 package jeffdean
 
-import "math/rand/v2"
-
-// Fact は Jeff Dean の伝説
-type Fact struct {
-	Number int
-	Text   string
-}
+import "github.com/aktnb/discord-bot-go/internal/domain/legend"
 
 // facts は Jeff Dean の伝説一覧
 var facts = []string{
@@ -33,7 +27,7 @@ var facts = []string{
 	"Jeff DeanのバブルソートプログラムはO(1)で動作する。",
 	"Jeff Deanはあるときbitをあまりにもshiftしすぎたため、最後には隣のマシンに移動してしまった。",
 	`gccの最適化オプション
-> gcc -O1: コンパイラは、 コードのサイズと実行時間を削減するよう試みます。 
+> gcc -O1: コンパイラは、 コードのサイズと実行時間を削減するよう試みます。
 > gcc -O2: さらに最適化を行います。
 > gcc -O3: さらに一層、 最適化を行います。
 > gcc -O4: 完全に書きなおしてもらうために、あなたのコードをJeff Deanに送信します。
@@ -69,10 +63,6 @@ var facts = []string{
 }
 
 // RandomFact は伝説をランダムに1つ返す
-func RandomFact() Fact {
-	i := rand.IntN(len(facts))
-	return Fact{
-		Number: i + 1,
-		Text:   facts[i],
-	}
+func RandomFact() legend.Episode {
+	return legend.Random(facts)
 }

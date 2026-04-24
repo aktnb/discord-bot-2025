@@ -3,7 +3,8 @@ package jeffdean
 import (
 	"context"
 
-	"github.com/aktnb/discord-bot-go/internal/domain/jeffdean"
+	domainjeffdean "github.com/aktnb/discord-bot-go/internal/domain/jeffdean"
+	"github.com/aktnb/discord-bot-go/internal/domain/legend"
 )
 
 type Service struct{}
@@ -12,7 +13,6 @@ func NewJeffDeanService() *Service {
 	return &Service{}
 }
 
-// GetRandomFact は Jeff Dean の伝説をランダムに1つ返す
-func (s *Service) GetRandomFact(ctx context.Context) (jeffdean.Fact, error) {
-	return jeffdean.RandomFact(), nil
+func (s *Service) GetRandomFact(ctx context.Context) (legend.Episode, error) {
+	return domainjeffdean.RandomFact(), nil
 }
