@@ -16,6 +16,7 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/application/mahjong"
 	"github.com/aktnb/discord-bot-go/internal/application/omikuji"
 	"github.com/aktnb/discord-bot-go/internal/application/ping"
+	versionapp "github.com/aktnb/discord-bot-go/internal/application/version"
 	"github.com/aktnb/discord-bot-go/internal/application/voicetext"
 	"github.com/aktnb/discord-bot-go/internal/application/yamada"
 	"github.com/aktnb/discord-bot-go/internal/config"
@@ -31,6 +32,7 @@ import (
 	mahjongcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/mahjong"
 	omikujicmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/omikuji"
 	pingcmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/ping"
+	versioncmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/version"
 	yamadacmd "github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands/yamada"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/dogapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/mahjongapi"
@@ -72,6 +74,11 @@ func main() {
 
 	// Command registry
 	registry := commands.NewCommandRegistry()
+
+	// Version command
+	versionService := versionapp.NewVersionService(version)
+	versionCmd := versioncmd.NewVersionCommand(versionService)
+	registry.Register(versionCmd)
 
 	// Ping command
 	pingService := ping.NewPingService()
