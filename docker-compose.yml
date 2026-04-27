@@ -16,25 +16,12 @@ services:
       timeout: 5s
       retries: 5
 
-  migrate:
-    build: .
-    entrypoint: ["/usr/local/bin/migrate"]
-    command:
-      - -path
-      - /app/migrations
-      - -database
-      - ${DATABASE_URL:-postgres://bot:botpass@db:5432/botdb?sslmode=disable}
-      - up
-    depends_on:
-      db:
-        condition: service_healthy
-
   bot:
     build: .
     restart: unless-stopped
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      db:
+        condition: service_healthy
     env_file:
       - .env
 
