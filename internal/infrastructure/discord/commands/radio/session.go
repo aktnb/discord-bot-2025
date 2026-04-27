@@ -47,6 +47,6 @@ func (m *sessionManager) stop(guildID string) {
 
 	if ok {
 		s.cancel()
-		s.vc.Disconnect()
+		s.vc.Disconnect(context.Background())
 	}
 }

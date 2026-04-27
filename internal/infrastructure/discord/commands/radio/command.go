@@ -111,7 +111,7 @@ func (c *RadioCommand) handlePlay(ctx context.Context, s *discordgo.Session, i *
 	}
 
 	// ボイスチャンネルに接続
-	vc, err := s.ChannelVoiceJoin(guildID, voiceChannelID, false, true)
+	vc, err := s.ChannelVoiceJoin(ctx, guildID, voiceChannelID, false, true)
 	if err != nil {
 		log.Printf("radio: voice join: %v", err)
 		_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
