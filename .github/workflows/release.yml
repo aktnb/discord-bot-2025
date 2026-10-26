@@ -27,14 +27,18 @@ jobs:
       - name: Determine release tag
         id: determine_tag
         run: |
-          INPUT_TAG="${{ github.event.inputs.tag }}"
-          IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
-
           if [ -n "$INPUT_TAG" ]; then
-            echo "tag=$INPUT_TAG" >> $GITHUB_OUTPUT
+            NEW_TAG="$INPUT_TAG"
           else
             # 最新のリリースタグを取得
-            LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+            LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // empty' 2>/dev/null || echo "")
+
+            VERSION_COMPONENT='(0|[1-9][0-9]{0,17})'
+            LATEST_TAG_REGEX="^v${VERSION_COMPONENT}\.${VERSION_COMPONENT}\.${VERSION_COMPONENT}(-rc${VERSION_COMPONENT})?$"
+            if [ -n "$LATEST_TAG" ] && [[ ! "$LATEST_TAG" =~ $LATEST_TAG_REGEX ]]; then
+              echo "Latest release tag has an unsupported format." >&2
+              exit 1
+            fi
 
             if [ -z "$LATEST_TAG" ]; then
               # リリースが存在しない場合
@@ -78,46 +82,53 @@ jobs:
               fi
             fi
 
-            echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
           fi
 
-          echo "Using tag: $(cat $GITHUB_OUTPUT | grep tag | cut -d= -f2)"
+          if ! git check-ref-format "refs/tags/$NEW_TAG"; then
+            echo "Invalid release tag format." >&2
+            exit 1
+          fi
+
+          echo "tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+          echo "Using tag: $NEW_TAG"
         env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          IS_PRERELEASE: ${{ github.event.inputs.prerelease }}
           GH_TOKEN: ${{ github.token }}
 
       - name: Set release name
         id: release_name
         run: |
-          TAG="${{ steps.determine_tag.outputs.tag }}"
-          IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
-
           if [ "$IS_PRERELEASE" = "true" ]; then
-            echo "name=Prerelease $TAG" >> $GITHUB_OUTPUT
+            echo "name=Prerelease $TAG" >> "$GITHUB_OUTPUT"
           else
-            echo "name=Release $TAG" >> $GITHUB_OUTPUT
+            echo "name=Release $TAG" >> "$GITHUB_OUTPUT"
           fi
+        env:
+          TAG: ${{ steps.determine_tag.outputs.tag }}
+          IS_PRERELEASE: ${{ github.event.inputs.prerelease }}
 
       - name: Set image tags
         id: image_tags
         run: |
-          TAG="${{ steps.determine_tag.outputs.tag }}"
-          IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
-          REGISTRY="ghcr.io/${{ github.repository_owner }}/discord-bot-go"
-
           if [ "$IS_PRERELEASE" = "true" ]; then
             {
               echo "tags<<EOF"
               echo "$REGISTRY:$TAG"
               echo "EOF"
-            } >> $GITHUB_OUTPUT
+            } >> "$GITHUB_OUTPUT"
           else
             {
               echo "tags<<EOF"
               echo "$REGISTRY:$TAG"
               echo "$REGISTRY:latest"
               echo "EOF"
-            } >> $GITHUB_OUTPUT
+            } >> "$GITHUB_OUTPUT"
           fi
+        env:
+          TAG: ${{ steps.determine_tag.outputs.tag }}
+          IS_PRERELEASE: ${{ github.event.inputs.prerelease }}
+          REGISTRY: ghcr.io/${{ github.repository_owner }}/discord-bot-go
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -137,6 +148,8 @@ jobs:
           push: true
           build-args: |
             VERSION=${{ steps.determine_tag.outputs.tag }}
+          cache-from: type=gha,scope=discord-bot-go
+          cache-to: type=gha,scope=discord-bot-go,mode=max,ignore-error=true
           tags: ${{ steps.image_tags.outputs.tags }}
 
       - name: Create Release
