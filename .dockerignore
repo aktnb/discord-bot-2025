@@ -1,0 +1,5 @@
+# Keep Git credentials and local environment secrets out of image layers and caches.
+.git
+.env
+.env.*
+!.env.example
