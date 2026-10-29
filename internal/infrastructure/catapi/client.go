@@ -43,7 +43,7 @@ func (c *CatAPIClient) FetchRandomImage(ctx context.Context) (*cat.CatImage, err
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, cat.ErrAPIUnavailable
+		return nil, fmt.Errorf("%w: %w", cat.ErrAPIUnavailable, err)
 	}
 	defer resp.Body.Close()
 
@@ -53,7 +53,7 @@ func (c *CatAPIClient) FetchRandomImage(ctx context.Context) (*cat.CatImage, err
 
 	var responses []apiResponse
 	if err := json.NewDecoder(resp.Body).Decode(&responses); err != nil {
-		return nil, cat.ErrInvalidResponse
+		return nil, fmt.Errorf("%w: %w", cat.ErrInvalidResponse, err)
 	}
 
 	if len(responses) == 0 {
