@@ -49,7 +49,8 @@ import (
 var version = "develop"
 
 func main() {
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	cfg := config.Load()
 
 	// Initialize Discord session
@@ -158,9 +159,7 @@ func main() {
 	log.Println("Bot is now running. Press CTRL+C to exit.")
 
 	// Wait for interrupt signal
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	<-stop
+	<-ctx.Done()
 
 	log.Println("Bot is shutting down...")
 }
