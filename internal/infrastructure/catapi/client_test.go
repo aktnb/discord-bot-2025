@@ -40,8 +40,8 @@ func TestFetchRandomImagePreservesTransportErrors(t *testing.T) {
 
 func TestFetchRandomImagePreservesDecodeErrors(t *testing.T) {
 	tests := []struct {
-		name string
-		body string
+		name  string
+		body  string
 		check func(*testing.T, error)
 	}{
 		{
