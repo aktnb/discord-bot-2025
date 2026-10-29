@@ -20,6 +20,7 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/application/voicetext"
 	"github.com/aktnb/discord-bot-go/internal/application/yamada"
 	"github.com/aktnb/discord-bot-go/internal/config"
+	voicetextdomain "github.com/aktnb/discord-bot-go/internal/domain/voicetext"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/catapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/discord/commands"
@@ -37,6 +38,7 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/dogapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/mahjongapi"
 	"github.com/aktnb/discord-bot-go/internal/infrastructure/persistence"
+	"github.com/aktnb/discord-bot-go/internal/interfaces/db"
 	"github.com/bwmarrin/discordgo"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -68,9 +70,11 @@ func main() {
 	defer pool.Close()
 	txm := persistence.NewTxManager(pool)
 
-	vtlRepositories := persistence.NewVoiceTextLinkRepositoryFactory()
+	newRepository := func(tx db.Tx) voicetextdomain.Repository {
+		return persistence.NewVoiceTextLinkRepository(tx)
+	}
 	discordAdapter := discord.NewDiscordAdapter(session)
-	vtlService := voicetext.NewVoiceTextService(vtlRepositories, txm, discordAdapter)
+	vtlService := voicetext.NewVoiceTextService(newRepository, txm, discordAdapter)
 
 	// Command registry
 	registry := commands.NewCommandRegistry()
