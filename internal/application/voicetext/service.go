@@ -2,6 +2,7 @@ package voicetext
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/aktnb/discord-bot-go/internal/domain/voicetext"
@@ -77,7 +78,7 @@ func (s *Service) JoinVoice(ctx context.Context, cmd JoinVoiceCommand) error {
 		var textChannelID discordid.TextChannelID
 
 		vtl, err := repo.FindByVoiceChannel(ctx, cmd.GuildID, cmd.VoiceChannelID)
-		if err != nil && err != voicetext.ErrVoiceTextLinkNotFound {
+		if err != nil && !errors.Is(err, voicetext.ErrVoiceTextLinkNotFound) {
 			return err
 		}
 
