@@ -18,16 +18,16 @@ func NewVoiceTextLinkRepositoryFactory() *VoiceTextLinkRepositoryFactory {
 }
 
 func (f *VoiceTextLinkRepositoryFactory) VoiceTextLink(tx db.Tx) voicetext.Repository {
-	return NewVoiceTextLinkRepository(&tx)
+	return NewVoiceTextLinkRepository(tx)
 }
 
 type VoiceTextLinkRepository struct {
 	tx db.Tx
 }
 
-func NewVoiceTextLinkRepository(tx *db.Tx) *VoiceTextLinkRepository {
+func NewVoiceTextLinkRepository(tx db.Tx) *VoiceTextLinkRepository {
 	return &VoiceTextLinkRepository{
-		tx: *tx,
+		tx: tx,
 	}
 }
 
