@@ -1,6 +1,11 @@
 package commands
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"cmp"
+	"slices"
+
+	"github.com/bwmarrin/discordgo"
+)
 
 type CommandRegistry struct {
 	commands map[string]SlashCommand
@@ -23,19 +28,22 @@ func (r *CommandRegistry) GetCommand(name string) (SlashCommand, bool) {
 	return cmd, ok
 }
 
-// GetAllCommands は全てのコマンドを返す
+// GetAllCommands は全てのコマンドを名前順に返す
 func (r *CommandRegistry) GetAllCommands() []SlashCommand {
 	cmds := make([]SlashCommand, 0, len(r.commands))
 	for _, cmd := range r.commands {
 		cmds = append(cmds, cmd)
 	}
+	slices.SortFunc(cmds, func(a, b SlashCommand) int {
+		return cmp.Compare(a.Name(), b.Name())
+	})
 	return cmds
 }
 
-// GetAllDefinitions は全てのコマンド定義をDiscord API用に変換して返す
+// GetAllDefinitions は全てのコマンド定義を名前順にDiscord API用に変換して返す
 func (r *CommandRegistry) GetAllDefinitions() []*discordgo.ApplicationCommand {
 	var definitions []*discordgo.ApplicationCommand
-	for _, cmd := range r.commands {
+	for _, cmd := range r.GetAllCommands() {
 		definitions = append(definitions, cmd.ToDiscordCommand())
 	}
 	return definitions
