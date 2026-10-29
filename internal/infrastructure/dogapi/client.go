@@ -41,7 +41,7 @@ func (c *DogAPIClient) FetchRandomImage(ctx context.Context) (*dog.DogImage, err
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, dog.ErrAPIUnavailable
+		return nil, fmt.Errorf("%w: %w", dog.ErrAPIUnavailable, err)
 	}
 	defer resp.Body.Close()
 
@@ -51,7 +51,7 @@ func (c *DogAPIClient) FetchRandomImage(ctx context.Context) (*dog.DogImage, err
 
 	var apiResp apiResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
-		return nil, dog.ErrInvalidResponse
+		return nil, fmt.Errorf("%w: %w", dog.ErrInvalidResponse, err)
 	}
 
 	if apiResp.Status != "success" || apiResp.Message == "" {
