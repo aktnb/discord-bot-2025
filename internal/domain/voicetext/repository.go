@@ -3,7 +3,6 @@ package voicetext
 import (
 	"context"
 
-	"github.com/aktnb/discord-bot-go/internal/interfaces/db"
 	"github.com/aktnb/discord-bot-go/internal/shared/discordid"
 )
 
@@ -13,8 +12,4 @@ type Repository interface {
 	FindAll(ctx context.Context) ([]*VoiceTextLink, error)
 	Save(ctx context.Context, vtl *VoiceTextLink) error
 	Delete(ctx context.Context, id VoiceTextID) error
-}
-
-type Repositories interface {
-	VoiceTextLink(tx db.Tx) Repository
 }

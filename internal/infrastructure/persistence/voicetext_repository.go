@@ -11,16 +11,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type VoiceTextLinkRepositoryFactory struct{}
-
-func NewVoiceTextLinkRepositoryFactory() *VoiceTextLinkRepositoryFactory {
-	return &VoiceTextLinkRepositoryFactory{}
-}
-
-func (f *VoiceTextLinkRepositoryFactory) VoiceTextLink(tx db.Tx) voicetext.Repository {
-	return NewVoiceTextLinkRepository(tx)
-}
-
 type VoiceTextLinkRepository struct {
 	tx db.Tx
 }

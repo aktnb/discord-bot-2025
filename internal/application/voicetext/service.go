@@ -10,21 +10,24 @@ import (
 	"github.com/aktnb/discord-bot-go/internal/shared/discordid"
 )
 
+// RepositoryFactory はトランザクションに紐づくリポジトリを生成します。
+type RepositoryFactory func(db.Tx) voicetext.Repository
+
 type Service struct {
-	repositories voicetext.Repositories
-	txm          db.TxManager
-	discord      discord.DiscordPort
+	newRepository RepositoryFactory
+	txm           db.TxManager
+	discord       discord.DiscordPort
 }
 
 func NewVoiceTextService(
-	repositories voicetext.Repositories,
+	newRepository RepositoryFactory,
 	txm db.TxManager,
 	discordPort discord.DiscordPort,
 ) *Service {
 	return &Service{
-		repositories: repositories,
-		txm:          txm,
-		discord:      discordPort,
+		newRepository: newRepository,
+		txm:           txm,
+		discord:       discordPort,
 	}
 }
 
@@ -70,7 +73,7 @@ func (s *Service) VoiceStateUpdate(ctx context.Context, cmd VoiceStateUpdateComm
 
 func (s *Service) JoinVoice(ctx context.Context, cmd JoinVoiceCommand) error {
 	return s.txm.WithKeyLock(ctx, db.LockKey(string(cmd.GuildID)+string(cmd.VoiceChannelID)), func(ctx context.Context, tx db.Tx) error {
-		var repo = s.repositories.VoiceTextLink(tx)
+		var repo = s.newRepository(tx)
 		var textChannelID discordid.TextChannelID
 
 		vtl, err := repo.FindByVoiceChannel(ctx, cmd.GuildID, cmd.VoiceChannelID)
@@ -124,7 +127,7 @@ func (s *Service) JoinVoice(ctx context.Context, cmd JoinVoiceCommand) error {
 
 func (s *Service) LeaveVoice(ctx context.Context, cmd LeaveVoiceCommand) error {
 	return s.txm.WithKeyLock(ctx, db.LockKey(string(cmd.GuildID)+string(cmd.VoiceChannelID)), func(ctx context.Context, tx db.Tx) error {
-		var repo = s.repositories.VoiceTextLink(tx)
+		var repo = s.newRepository(tx)
 		vtl, err := repo.FindByVoiceChannel(ctx, cmd.GuildID, cmd.VoiceChannelID)
 		if err != nil {
 			return err
@@ -162,7 +165,7 @@ func (s *Service) SyncVoiceTextLinks(ctx context.Context) error {
 
 	var dbLinks []*voicetext.VoiceTextLink
 	err = s.txm.WithTx(ctx, func(ctx context.Context, tx db.Tx) error {
-		repo := s.repositories.VoiceTextLink(tx)
+		repo := s.newRepository(tx)
 		links, err := repo.FindAll(ctx)
 		if err != nil {
 			return err
@@ -296,7 +299,7 @@ func (s *Service) SyncVoiceTextLinks(ctx context.Context) error {
 
 func (s *Service) cleanupLink(ctx context.Context, link *voicetext.VoiceTextLink) error {
 	return s.txm.WithKeyLock(ctx, db.LockKey(string(link.GuildID())+string(link.VoiceChannelID())), func(ctx context.Context, tx db.Tx) error {
-		repo := s.repositories.VoiceTextLink(tx)
+		repo := s.newRepository(tx)
 
 		// テキストチャンネル削除
 		if err := s.discord.DeleteTextChannel(ctx, link.TextChannelID()); err != nil {
@@ -350,7 +353,7 @@ func (s *Service) syncLinkPermissions(ctx context.Context, link *voicetext.Voice
 
 func (s *Service) createLinkWithUsers(ctx context.Context, guildID discordid.GuildID, voiceChannelID discordid.VoiceChannelID, userIDs []discordid.UserID) error {
 	return s.txm.WithKeyLock(ctx, db.LockKey(string(guildID)+string(voiceChannelID)), func(ctx context.Context, tx db.Tx) error {
-		repo := s.repositories.VoiceTextLink(tx)
+		repo := s.newRepository(tx)
 
 		// テキストチャンネル作成
 		textChannelID, err := s.discord.CreateTextChannelForVoice(ctx, guildID, voiceChannelID)
