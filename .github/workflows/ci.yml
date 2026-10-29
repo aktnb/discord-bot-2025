@@ -15,6 +15,9 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -29,4 +32,62 @@ jobs:
         run: go build -v ./cmd/bot
 
       - name: Run tests
-        run: go test -v ./...
+        id: tests
+        shell: bash
+        run: |
+          set -o pipefail
+          go test -json ./... | tee "$RUNNER_TEMP/test-results.json"
+
+      - name: Summarize tests and comment on PR
+        if: ${{ always() }}
+        uses: actions/github-script@v8
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const resultPath = path.join(process.env.RUNNER_TEMP, 'test-results.json');
+            const counts = { pass: 0, fail: 0, skip: 0 };
+            const failedPackages = new Set();
+            if (fs.existsSync(resultPath)) {
+              for (const line of fs.readFileSync(resultPath, 'utf8').split('\n')) {
+                if (!line.trim()) continue;
+                const event = JSON.parse(line);
+                if (event.Test && Object.hasOwn(counts, event.Action)) counts[event.Action]++;
+                if (!event.Test && event.Action === 'fail') failedPackages.add(event.Package);
+              }
+            }
+            const marker = '<!-- ci-test-summary -->';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              marker,
+              '## Test summary',
+              '',
+              `Result: **${process.env.TEST_OUTCOME}**`,
+              '',
+              '| Passed | Failed | Skipped |',
+              '| ---: | ---: | ---: |',
+              `| ${counts.pass} | ${counts.fail} | ${counts.skip} |`,
+              '',
+              `Failed packages: **${failedPackages.size}**`,
+              '',
+              'Counts include subtests. Build errors may fail a package without a failed test.',
+              '',
+              `[View CI logs](${runUrl})`,
+            ].join('\n');
+            await core.summary.addRaw(body).write();
+            // Fork PRs have a read-only token; keep their results in the job summary.
+            if (context.eventName !== 'pull_request' ||
+                context.payload.pull_request.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`) return;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo, issue_number, per_page: 100,
+            });
+            const previous = comments.find(comment =>
+              comment.user.login === 'github-actions[bot]' && comment.body?.startsWith(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number, body });
+            }
