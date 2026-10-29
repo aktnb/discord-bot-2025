@@ -28,39 +28,11 @@ func (r *VoiceTextLinkRepository) FindByVoiceChannel(ctx context.Context, guildI
 		WHERE guild_id = $1 AND voice_channel_id = $2
 	`
 
-	var (
-		dbID             string
-		dbGuildID        string
-		dbVoiceChannelID string
-		dbTextChannelID  string
-		dbCreatedAt      time.Time
-		dbUpdatedAt      time.Time
-	)
-
-	err := r.tx.QueryRow(ctx, query, string(guildID), string(voiceChannelID)).Scan(
-		&dbID,
-		&dbGuildID,
-		&dbVoiceChannelID,
-		&dbTextChannelID,
-		&dbCreatedAt,
-		&dbUpdatedAt,
-	)
-
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, voicetext.ErrVoiceTextLinkNotFound
-		}
-		return nil, err
+	link, err := scanVoiceTextLink(r.tx.QueryRow(ctx, query, string(guildID), string(voiceChannelID)))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, voicetext.ErrVoiceTextLinkNotFound
 	}
-
-	return voicetext.RebuildVoiceTextLink(
-		voicetext.VoiceTextID(dbID),
-		discordid.GuildID(dbGuildID),
-		discordid.VoiceChannelID(dbVoiceChannelID),
-		discordid.TextChannelID(dbTextChannelID),
-		dbCreatedAt,
-		dbUpdatedAt,
-	)
+	return link, err
 }
 
 func (r *VoiceTextLinkRepository) FindByTextChannel(ctx context.Context, guildID discordid.GuildID, textChannelID discordid.TextChannelID) (*voicetext.VoiceTextLink, error) {
@@ -70,39 +42,11 @@ func (r *VoiceTextLinkRepository) FindByTextChannel(ctx context.Context, guildID
 		WHERE guild_id = $1 AND text_channel_id = $2
 	`
 
-	var (
-		dbID             string
-		dbGuildID        string
-		dbVoiceChannelID string
-		dbTextChannelID  string
-		dbCreatedAt      time.Time
-		dbUpdatedAt      time.Time
-	)
-
-	err := r.tx.QueryRow(ctx, query, string(guildID), string(textChannelID)).Scan(
-		&dbID,
-		&dbGuildID,
-		&dbVoiceChannelID,
-		&dbTextChannelID,
-		&dbCreatedAt,
-		&dbUpdatedAt,
-	)
-
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, voicetext.ErrVoiceTextLinkNotFound
-		}
-		return nil, err
+	link, err := scanVoiceTextLink(r.tx.QueryRow(ctx, query, string(guildID), string(textChannelID)))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, voicetext.ErrVoiceTextLinkNotFound
 	}
-
-	return voicetext.RebuildVoiceTextLink(
-		voicetext.VoiceTextID(dbID),
-		discordid.GuildID(dbGuildID),
-		discordid.VoiceChannelID(dbVoiceChannelID),
-		discordid.TextChannelID(dbTextChannelID),
-		dbCreatedAt,
-		dbUpdatedAt,
-	)
+	return link, err
 }
 
 func (r *VoiceTextLinkRepository) Save(ctx context.Context, vtl *voicetext.VoiceTextLink) error {
@@ -156,27 +100,7 @@ func (r *VoiceTextLinkRepository) FindAll(ctx context.Context) ([]*voicetext.Voi
 
 	var links []*voicetext.VoiceTextLink
 	for rows.Next() {
-		var (
-			dbID             string
-			dbGuildID        string
-			dbVoiceChannelID string
-			dbTextChannelID  string
-			dbCreatedAt      time.Time
-			dbUpdatedAt      time.Time
-		)
-
-		if err := rows.Scan(&dbID, &dbGuildID, &dbVoiceChannelID, &dbTextChannelID, &dbCreatedAt, &dbUpdatedAt); err != nil {
-			return nil, err
-		}
-
-		link, err := voicetext.RebuildVoiceTextLink(
-			voicetext.VoiceTextID(dbID),
-			discordid.GuildID(dbGuildID),
-			discordid.VoiceChannelID(dbVoiceChannelID),
-			discordid.TextChannelID(dbTextChannelID),
-			dbCreatedAt,
-			dbUpdatedAt,
-		)
+		link, err := scanVoiceTextLink(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -185,4 +109,38 @@ func (r *VoiceTextLinkRepository) FindAll(ctx context.Context) ([]*voicetext.Voi
 	}
 
 	return links, rows.Err()
+}
+
+// scanVoiceTextLink は単一行と複数行で共通のカラム順序と復元処理を使う。
+func scanVoiceTextLink(row db.Row) (*voicetext.VoiceTextLink, error) {
+	var (
+		dbID             string
+		dbGuildID        string
+		dbVoiceChannelID string
+		dbTextChannelID  string
+		dbCreatedAt      time.Time
+		dbUpdatedAt      time.Time
+	)
+
+	err := row.Scan(
+		&dbID,
+		&dbGuildID,
+		&dbVoiceChannelID,
+		&dbTextChannelID,
+		&dbCreatedAt,
+		&dbUpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return voicetext.RebuildVoiceTextLink(
+		voicetext.VoiceTextID(dbID),
+		discordid.GuildID(dbGuildID),
+		discordid.VoiceChannelID(dbVoiceChannelID),
+		discordid.TextChannelID(dbTextChannelID),
+		dbCreatedAt,
+		dbUpdatedAt,
+	)
 }
