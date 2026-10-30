@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/aktnb/discord-bot-go/internal/interfaces/db"
@@ -26,7 +27,9 @@ func (t *postgresTx) QueryRow(ctx context.Context, sql string, args ...any) db.R
 }
 
 type postgresTxManager struct {
-	pool *pgxpool.Pool
+	pool interface {
+		Begin(context.Context) (pgx.Tx, error)
+	}
 }
 
 func NewTxManager(pool *pgxpool.Pool) db.TxManager {
@@ -35,18 +38,22 @@ func NewTxManager(pool *pgxpool.Pool) db.TxManager {
 	}
 }
 
-func (m *postgresTxManager) WithTx(ctx context.Context, fn func(ctx context.Context, tx db.Tx) error) error {
+func (m *postgresTxManager) WithTx(ctx context.Context, fn func(ctx context.Context, tx db.Tx) error) (resultErr error) {
 	pgxTx, err := m.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
+	// Commit 後の Rollback は ErrTxClosed になるため無視する。panic 時も解放する。
+	defer func() {
+		if err := pgxTx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			resultErr = errors.Join(resultErr, fmt.Errorf("failed to rollback transaction: %w", err))
+		}
+	}()
+
 	tx := &postgresTx{tx: pgxTx}
 
 	if err := fn(ctx, tx); err != nil {
-		if rbErr := pgxTx.Rollback(ctx); rbErr != nil {
-			return fmt.Errorf("failed to rollback transaction (original error: %w): %w", err, rbErr)
-		}
 		return err
 	}
 
