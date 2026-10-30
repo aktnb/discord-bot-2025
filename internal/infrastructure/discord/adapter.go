@@ -18,7 +18,7 @@ func NewDiscordAdapter(session *discordgo.Session) *DiscordAdapter {
 
 func (a *DiscordAdapter) CreateTextChannelForVoice(ctx context.Context, guildID discordid.GuildID, voiceChannelID discordid.VoiceChannelID) (discordid.TextChannelID, error) {
 	// ボイスチャンネル情報を取得
-	voiceChannel, err := a.session.Channel(string(voiceChannelID))
+	voiceChannel, err := a.session.Channel(string(voiceChannelID), discordgo.WithContext(ctx))
 	if err != nil {
 		return discordid.TextChannelID(""), fmt.Errorf("failed to get voice channel: %w", err)
 	}
@@ -41,7 +41,7 @@ func (a *DiscordAdapter) CreateTextChannelForVoice(ctx context.Context, guildID 
 		Type:                 discordgo.ChannelTypeGuildText,
 		ParentID:             voiceChannel.ParentID,
 		PermissionOverwrites: permissionOverwrites,
-	})
+	}, discordgo.WithContext(ctx))
 	if err != nil {
 		return discordid.TextChannelID(""), fmt.Errorf("failed to create text channel: %w", err)
 	}
@@ -50,7 +50,7 @@ func (a *DiscordAdapter) CreateTextChannelForVoice(ctx context.Context, guildID 
 }
 
 func (a *DiscordAdapter) DeleteTextChannel(ctx context.Context, textChannelID discordid.TextChannelID) error {
-	_, err := a.session.ChannelDelete(string(textChannelID))
+	_, err := a.session.ChannelDelete(string(textChannelID), discordgo.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to delete text channel: %w", err)
 	}
@@ -58,7 +58,7 @@ func (a *DiscordAdapter) DeleteTextChannel(ctx context.Context, textChannelID di
 }
 
 func (a *DiscordAdapter) IsVoiceChannelExists(ctx context.Context, channelID discordid.VoiceChannelID) (bool, error) {
-	_, err := a.session.Channel(string(channelID))
+	_, err := a.session.Channel(string(channelID), discordgo.WithContext(ctx))
 	if err != nil {
 		if restErr, ok := err.(*discordgo.RESTError); ok {
 			if restErr.Message != nil && restErr.Message.Code == discordgo.ErrCodeUnknownChannel {
@@ -71,7 +71,7 @@ func (a *DiscordAdapter) IsVoiceChannelExists(ctx context.Context, channelID dis
 }
 
 func (a *DiscordAdapter) IsTextChannelExists(ctx context.Context, channelID discordid.TextChannelID) (bool, error) {
-	_, err := a.session.Channel(string(channelID))
+	_, err := a.session.Channel(string(channelID), discordgo.WithContext(ctx))
 	if err != nil {
 		if restErr, ok := err.(*discordgo.RESTError); ok {
 			if restErr.Message != nil && restErr.Message.Code == discordgo.ErrCodeUnknownChannel {
@@ -93,6 +93,7 @@ func (a *DiscordAdapter) AddMemberToTextChannel(ctx context.Context, guildID dis
 		discordgo.PermissionOverwriteTypeMember,
 		allow,
 		deny,
+		discordgo.WithContext(ctx),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to add member to text channel: %w", err)
@@ -101,7 +102,7 @@ func (a *DiscordAdapter) AddMemberToTextChannel(ctx context.Context, guildID dis
 }
 
 func (a *DiscordAdapter) RemoveMemberFromTextChannel(ctx context.Context, guildID discordid.GuildID, textChannelID discordid.TextChannelID, userID discordid.UserID) error {
-	err := a.session.ChannelPermissionDelete(string(textChannelID), string(userID))
+	err := a.session.ChannelPermissionDelete(string(textChannelID), string(userID), discordgo.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to remove member from text channel: %w", err)
 	}
@@ -151,7 +152,7 @@ func (a *DiscordAdapter) GetGuildVoiceStates(ctx context.Context, guildID discor
 }
 
 func (a *DiscordAdapter) GetTextChannelMembers(ctx context.Context, textChannelID discordid.TextChannelID) ([]discordid.UserID, error) {
-	channel, err := a.session.Channel(string(textChannelID))
+	channel, err := a.session.Channel(string(textChannelID), discordgo.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get text channel: %w", err)
 	}
