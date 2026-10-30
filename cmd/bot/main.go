@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -51,12 +52,18 @@ var version = "develop"
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	cfg := config.Load()
+	if err := run(ctx, config.Load()); err != nil {
+		log.Printf("bot stopped: %v", err)
+		os.Exit(1)
+	}
+}
+
+func run(ctx context.Context, cfg config.Config) error {
 
 	// Initialize Discord session
 	session, err := discordgo.New("Bot " + cfg.DiscordToken)
 	if err != nil {
-		log.Fatalf("failed to create Discord session: %v", err)
+		return fmt.Errorf("failed to create Discord session: %w", err)
 	}
 
 	// Add necessary intents
@@ -66,7 +73,7 @@ func main() {
 
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("failed to create database connection pool: %v", err)
+		return fmt.Errorf("failed to create database connection pool: %w", err)
 	}
 	defer pool.Close()
 	txm := persistence.NewTxManager(pool)
@@ -149,7 +156,7 @@ func main() {
 	session.AddHandler(voiceStateHandler.Handle())
 
 	if err := session.Open(); err != nil {
-		log.Fatalf("cannot open Discord session: %v", err)
+		return fmt.Errorf("cannot open Discord session: %w", err)
 	}
 	if err := session.UpdateCustomStatus(version); err != nil {
 		log.Printf("failed to update bot status: %v", err)
@@ -162,4 +169,5 @@ func main() {
 	<-ctx.Done()
 
 	log.Println("Bot is shutting down...")
+	return nil
 }
