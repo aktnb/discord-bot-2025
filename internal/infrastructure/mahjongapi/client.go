@@ -35,7 +35,7 @@ func (c *MahjongAPIClient) FetchRandomStartingHand(ctx context.Context) (*mahjon
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, mahjong.ErrAPIUnavailable
+		return nil, fmt.Errorf("%w: %w", mahjong.ErrAPIUnavailable, err)
 	}
 	defer resp.Body.Close()
 
