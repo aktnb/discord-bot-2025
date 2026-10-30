@@ -2,6 +2,7 @@ package discord
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/aktnb/discord-bot-go/internal/shared/discordid"
@@ -60,7 +61,8 @@ func (a *DiscordAdapter) DeleteTextChannel(ctx context.Context, textChannelID di
 func (a *DiscordAdapter) IsVoiceChannelExists(ctx context.Context, channelID discordid.VoiceChannelID) (bool, error) {
 	_, err := a.session.Channel(string(channelID), discordgo.WithContext(ctx))
 	if err != nil {
-		if restErr, ok := err.(*discordgo.RESTError); ok {
+		var restErr *discordgo.RESTError
+		if errors.As(err, &restErr) {
 			if restErr.Message != nil && restErr.Message.Code == discordgo.ErrCodeUnknownChannel {
 				return false, nil
 			}
@@ -73,7 +75,8 @@ func (a *DiscordAdapter) IsVoiceChannelExists(ctx context.Context, channelID dis
 func (a *DiscordAdapter) IsTextChannelExists(ctx context.Context, channelID discordid.TextChannelID) (bool, error) {
 	_, err := a.session.Channel(string(channelID), discordgo.WithContext(ctx))
 	if err != nil {
-		if restErr, ok := err.(*discordgo.RESTError); ok {
+		var restErr *discordgo.RESTError
+		if errors.As(err, &restErr) {
 			if restErr.Message != nil && restErr.Message.Code == discordgo.ErrCodeUnknownChannel {
 				return false, nil
 			}
