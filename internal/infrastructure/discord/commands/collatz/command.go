@@ -47,7 +47,7 @@ func (c *CollatzCommand) Handle(ctx context.Context, s *discordgo.Session, i *di
 	// 計算処理に時間がかかる可能性があるため、応答を遅延させる
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-	})
+	}, discordgo.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error deferring response: %v", err)
 		return err
@@ -59,7 +59,7 @@ func (c *CollatzCommand) Handle(ctx context.Context, s *discordgo.Session, i *di
 		log.Printf("Error calculating collatz sequence: %v", err)
 		_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 			Content: fmt.Sprintf("エラーが発生しました: %v", err),
-		})
+		}, discordgo.WithContext(ctx))
 		return err
 	}
 
@@ -67,7 +67,7 @@ func (c *CollatzCommand) Handle(ctx context.Context, s *discordgo.Session, i *di
 	if len(messages) > 0 {
 		_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 			Content: messages[0],
-		})
+		}, discordgo.WithContext(ctx))
 		if err != nil {
 			log.Printf("Error sending first message: %v", err)
 			return err
@@ -76,7 +76,7 @@ func (c *CollatzCommand) Handle(ctx context.Context, s *discordgo.Session, i *di
 
 	// 残りのメッセージを通常のチャンネルメッセージとして送信
 	for idx, message := range messages[1:] {
-		_, err = s.ChannelMessageSend(i.ChannelID, message)
+		_, err = s.ChannelMessageSend(i.ChannelID, message, discordgo.WithContext(ctx))
 		if err != nil {
 			log.Printf("Error sending message %d: %v", idx+2, err)
 			return err

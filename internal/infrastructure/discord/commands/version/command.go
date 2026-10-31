@@ -39,7 +39,7 @@ func (c *VersionCommand) Handle(ctx context.Context, s *discordgo.Session, i *di
 		Data: &discordgo.InteractionResponseData{
 			Content: v,
 		},
-	})
+	}, discordgo.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error responding to version: %v", err)
 		return err

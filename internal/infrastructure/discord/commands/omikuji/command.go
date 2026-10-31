@@ -52,7 +52,7 @@ func (c *OmikujiCommand) Handle(ctx context.Context, s *discordgo.Session, i *di
 			Data: &discordgo.InteractionResponseData{
 				Content: "おみくじを引けませんでした。もう一度お試しください。",
 			},
-		})
+		}, discordgo.WithContext(ctx))
 		return err
 	}
 
@@ -68,7 +68,7 @@ func (c *OmikujiCommand) Handle(ctx context.Context, s *discordgo.Session, i *di
 		Data: &discordgo.InteractionResponseData{
 			Content: responseContent,
 		},
-	})
+	}, discordgo.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error responding to omikuji: %v", err)
 		return err
