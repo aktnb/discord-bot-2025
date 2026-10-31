@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
@@ -36,7 +37,7 @@ func (r *CommandRegistrar) RegisterApplicationCommands() error {
 	if len(globalDefs) > 0 {
 		log.Printf("Registering %d application commands globally...", len(globalDefs))
 		if _, err := r.session.ApplicationCommandBulkOverwrite(r.session.State.User.ID, "", globalDefs); err != nil {
-			return err
+			return fmt.Errorf("failed to register global application commands: %w", err)
 		}
 		log.Printf("Successfully registered %d application commands globally", len(globalDefs))
 	}
@@ -44,7 +45,7 @@ func (r *CommandRegistrar) RegisterApplicationCommands() error {
 	for guildID, defs := range guildDefs {
 		log.Printf("Registering %d application commands for guild %s...", len(defs), guildID)
 		if _, err := r.session.ApplicationCommandBulkOverwrite(r.session.State.User.ID, guildID, defs); err != nil {
-			return err
+			return fmt.Errorf("failed to register application commands for guild %s: %w", guildID, err)
 		}
 		log.Printf("Successfully registered %d application commands for guild %s", len(defs), guildID)
 	}
