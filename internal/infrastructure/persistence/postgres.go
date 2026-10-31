@@ -63,14 +63,3 @@ func (m *postgresTxManager) WithTx(ctx context.Context, fn func(ctx context.Cont
 
 	return nil
 }
-
-func (m *postgresTxManager) WithKeyLock(ctx context.Context, key db.LockKey, fn func(ctx context.Context, tx db.Tx) error) error {
-	return m.WithTx(ctx, func(ctx context.Context, tx db.Tx) error {
-		lockSQL := "SELECT pg_advisory_xact_lock(hashtext($1))"
-		if _, err := tx.Exec(ctx, lockSQL, string(key)); err != nil {
-			return fmt.Errorf("failed to acquire advisory lock: %w", err)
-		}
-
-		return fn(ctx, tx)
-	})
-}

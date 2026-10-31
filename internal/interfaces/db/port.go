@@ -26,9 +26,6 @@ type Tx interface {
 	QueryRow(ctx context.Context, sql string, args ...any) Row
 }
 
-type LockKey string
-
 type TxManager interface {
 	WithTx(ctx context.Context, fn func(ctx context.Context, tx Tx) error) error
-	WithKeyLock(ctx context.Context, key LockKey, fn func(ctx context.Context, tx Tx) error) error
 }
