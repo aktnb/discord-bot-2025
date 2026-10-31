@@ -53,3 +53,24 @@ func TestChannelExistsRecognizesWrappedRESTErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestDeleteTextChannelTreatsOnlyUnknownChannelAsSuccess(t *testing.T) {
+	for _, code := range []int{discordgo.ErrCodeUnknownChannel, discordgo.ErrCodeMissingAccess} {
+		t.Run(fmt.Sprint(code), func(t *testing.T) {
+			var cause error = &discordgo.RESTError{Response: &http.Response{Status: "404 Not Found"}, Message: &discordgo.APIErrorMessage{Code: code}}
+			session, err := discordgo.New("Bot test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			session.Client = &http.Client{Transport: errorTransport{err: fmt.Errorf("wrapped: %w", cause)}}
+			err = NewDiscordAdapter(session).DeleteTextChannel(context.Background(), "text")
+			if code == discordgo.ErrCodeUnknownChannel {
+				if err != nil {
+					t.Fatal(err)
+				}
+			} else if !errors.Is(err, cause) {
+				t.Fatalf("lost failure: %v", err)
+			}
+		})
+	}
+}
