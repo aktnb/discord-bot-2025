@@ -13,6 +13,7 @@ import (
 const (
 	baseURL        = "https://mahjong-api.vercel.app/api/starting-hand"
 	requestTimeout = 10 * time.Second
+	maxImageSize   = 8 << 20 // 8 MiB
 )
 
 type MahjongAPIClient struct {
@@ -43,10 +44,14 @@ func (c *MahjongAPIClient) FetchRandomStartingHand(ctx context.Context) (*mahjon
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	// 画像バイナリデータ全体を読み込む
-	imageData, err := io.ReadAll(resp.Body)
+	// 上限より1バイト多く読み、巨大なレスポンスによるメモリ消費を抑える
+	imageData, err := io.ReadAll(io.LimitReader(resp.Body, maxImageSize+1))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if len(imageData) > maxImageSize {
+		return nil, fmt.Errorf("image response exceeds %d bytes", maxImageSize)
 	}
 
 	if len(imageData) == 0 {
