@@ -118,6 +118,9 @@ func (a *DiscordAdapter) GetVoiceChannelMemberCount(ctx context.Context, guildID
 		return 0, fmt.Errorf("failed to get guild: %w", err)
 	}
 
+	a.session.State.RLock()
+	defer a.session.State.RUnlock()
+
 	count := 0
 	for _, vs := range guild.VoiceStates {
 		if vs.ChannelID == string(voiceChannelID) {
@@ -129,6 +132,9 @@ func (a *DiscordAdapter) GetVoiceChannelMemberCount(ctx context.Context, guildID
 }
 
 func (a *DiscordAdapter) GetGuilds(ctx context.Context) ([]discordid.GuildID, error) {
+	a.session.State.RLock()
+	defer a.session.State.RUnlock()
+
 	guilds := make([]discordid.GuildID, 0, len(a.session.State.Guilds))
 	for _, guild := range a.session.State.Guilds {
 		guilds = append(guilds, discordid.GuildID(guild.ID))
@@ -141,6 +147,9 @@ func (a *DiscordAdapter) GetGuildVoiceStates(ctx context.Context, guildID discor
 	if err != nil {
 		return nil, fmt.Errorf("failed to get guild: %w", err)
 	}
+
+	a.session.State.RLock()
+	defer a.session.State.RUnlock()
 
 	channelUsers := make(map[discordid.VoiceChannelID][]discordid.UserID)
 	for _, vs := range guild.VoiceStates {
