@@ -36,7 +36,15 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          go test -json ./... | tee "$RUNNER_TEMP/test-results.json"
+          go test -json -coverprofile="$RUNNER_TEMP/coverage.out" ./... | tee "$RUNNER_TEMP/test-results.json"
+
+      - name: Calculate coverage
+        if: ${{ !cancelled() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
+        shell: bash
+        run: |
+          if [[ -s "$RUNNER_TEMP/coverage.out" ]]; then
+            go tool cover -func="$RUNNER_TEMP/coverage.out" > "$RUNNER_TEMP/coverage.txt"
+          fi
 
       - name: Summarize tests and comment on PR
         if: ${{ always() }}
@@ -58,6 +66,10 @@ jobs:
                 if (!event.Test && event.Action === 'fail') failedPackages.add(event.Package);
               }
             }
+            const coveragePath = path.join(process.env.RUNNER_TEMP, 'coverage.txt');
+            const coverage = fs.existsSync(coveragePath)
+              ? fs.readFileSync(coveragePath, 'utf8').match(/^total:\s+\(statements\)\s+([\d.]+%)/m)?.[1]
+              : undefined;
             const marker = '<!-- ci-test-summary -->';
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const body = [
@@ -71,6 +83,10 @@ jobs:
               `| ${counts.pass} | ${counts.fail} | ${counts.skip} |`,
               '',
               `Failed packages: **${failedPackages.size}**`,
+              '',
+              `Statement coverage: **${coverage ?? 'N/A'}**`,
+              ...(coverage && process.env.TEST_OUTCOME !== 'success'
+                ? ['Coverage may be incomplete because the test run did not succeed.'] : []),
               '',
               'Counts include subtests. Build errors may fail a package without a failed test.',
               '',
