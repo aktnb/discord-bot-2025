@@ -52,10 +52,18 @@ var version = "develop"
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := run(ctx, config.Load()); err != nil {
+	if err := runWithConfig(ctx); err != nil {
 		log.Printf("bot stopped: %v", err)
 		os.Exit(1)
 	}
+}
+
+func runWithConfig(ctx context.Context) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+	return run(ctx, cfg)
 }
 
 func run(ctx context.Context, cfg config.Config) error {

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -13,7 +14,7 @@ type Config struct {
 }
 
 // Load reads configuration from environment variables or a .env file
-func Load() Config {
+func Load() (Config, error) {
 	log.Println("Loading configuration...")
 
 	if err := godotenv.Load(); err != nil {
@@ -22,16 +23,16 @@ func Load() Config {
 
 	token := os.Getenv("DISCORD_TOKEN")
 	if token == "" {
-		log.Fatal("DISCORD_TOKEN environment variable is not set")
+		return Config{}, fmt.Errorf("DISCORD_TOKEN environment variable is not set")
 	}
 
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal("DATABASE_URL environment variable is not set")
+		return Config{}, fmt.Errorf("DATABASE_URL environment variable is not set")
 	}
 
 	return Config{
 		DiscordToken: token,
 		DatabaseURL:  dbURL,
-	}
+	}, nil
 }
