@@ -12,13 +12,14 @@ type CommandRegistry struct {
 }
 
 func NewCommandRegistry() *CommandRegistry {
-	return &CommandRegistry{
-		commands: make(map[string]SlashCommand),
-	}
+	return &CommandRegistry{}
 }
 
 // Register は SlashCommand を登録する
 func (r *CommandRegistry) Register(cmd SlashCommand) {
+	if r.commands == nil {
+		r.commands = make(map[string]SlashCommand)
+	}
 	r.commands[cmd.Name()] = cmd
 }
 
