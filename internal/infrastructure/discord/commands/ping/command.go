@@ -41,7 +41,7 @@ func (c *PingCommand) Handle(ctx context.Context, s *discordgo.Session, i *disco
 		Data: &discordgo.InteractionResponseData{
 			Content: response,
 		},
-	})
+	}, discordgo.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error responding to ping: %v", err)
 		return err

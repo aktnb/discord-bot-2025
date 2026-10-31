@@ -48,7 +48,7 @@ func (c *Command) Handle(ctx context.Context, s *discordgo.Session, i *discordgo
 		Data: &discordgo.InteractionResponseData{
 			Content: fmt.Sprintf("【山田速報】\n> %s", episode.Text),
 		},
-	})
+	}, discordgo.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error responding to yamada: %v", err)
 		return err

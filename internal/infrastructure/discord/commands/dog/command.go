@@ -33,7 +33,7 @@ func (c *DogCommand) Handle(ctx context.Context, s *discordgo.Session, i *discor
 	// まず応答を遅延させる（API呼び出しに時間がかかる可能性があるため）
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-	})
+	}, discordgo.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error deferring response: %v", err)
 		return err
@@ -44,14 +44,14 @@ func (c *DogCommand) Handle(ctx context.Context, s *discordgo.Session, i *discor
 		log.Printf("Error fetching dog image: %v", err)
 		_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 			Content: "犬の画像を取得できませんでした。もう一度お試しください。",
-		})
+		}, discordgo.WithContext(ctx))
 		return err
 	}
 
 	// 画像URLを直接返す
 	_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 		Content: image.URL,
-	})
+	}, discordgo.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error sending dog image: %v", err)
 		return err

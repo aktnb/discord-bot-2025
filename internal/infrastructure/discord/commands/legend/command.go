@@ -51,7 +51,7 @@ func (c *Command) Handle(ctx context.Context, s *discordgo.Session, i *discordgo
 		Data: &discordgo.InteractionResponseData{
 			Content: fmt.Sprintf("%s伝説 その%d\n> %s", c.prefix, episode.Number, episode.Text),
 		},
-	})
+	}, discordgo.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error responding to %s: %v", c.name, err)
 		return err

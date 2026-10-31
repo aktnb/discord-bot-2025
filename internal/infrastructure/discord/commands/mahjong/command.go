@@ -34,7 +34,7 @@ func (c *MahjongCommand) Handle(ctx context.Context, s *discordgo.Session, i *di
 	// API呼び出しに時間がかかる可能性があるため、応答を遅延させる
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-	})
+	}, discordgo.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error deferring response: %v", err)
 		return err
@@ -45,7 +45,7 @@ func (c *MahjongCommand) Handle(ctx context.Context, s *discordgo.Session, i *di
 		log.Printf("Error fetching mahjong image: %v", err)
 		_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 			Content: "麻雀の配牌を取得できませんでした。もう一度お試しください。",
-		})
+		}, discordgo.WithContext(ctx))
 		return err
 	}
 
@@ -59,7 +59,7 @@ func (c *MahjongCommand) Handle(ctx context.Context, s *discordgo.Session, i *di
 				Reader: imageReader,
 			},
 		},
-	})
+	}, discordgo.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error sending mahjong image: %v", err)
 		return err
