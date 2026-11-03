@@ -52,6 +52,10 @@ func (a *DiscordAdapter) CreateTextChannelForVoice(ctx context.Context, guildID 
 
 func (a *DiscordAdapter) DeleteTextChannel(ctx context.Context, textChannelID discordid.TextChannelID) error {
 	_, err := a.session.ChannelDelete(string(textChannelID), discordgo.WithContext(ctx))
+	var restErr *discordgo.RESTError
+	if errors.As(err, &restErr) && restErr.Message != nil && restErr.Message.Code == discordgo.ErrCodeUnknownChannel {
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("failed to delete text channel: %w", err)
 	}

@@ -14,7 +14,7 @@ import (
 
 type immediateTxManager struct{ db.TxManager }
 
-func (immediateTxManager) WithKeyLock(ctx context.Context, _ db.LockKey, fn func(context.Context, db.Tx) error) error {
+func (immediateTxManager) WithTx(ctx context.Context, fn func(context.Context, db.Tx) error) error {
 	return fn(ctx, nil)
 }
 
